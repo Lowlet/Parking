@@ -1,8 +1,8 @@
-import * as THREE from 'https://cdn.skypack.dev/three@0.132.2/build/three.module.js'
-import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/loaders/GLTFLoader.js'
-import { DRACOLoader } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/loaders/DRACOLoader.js';
-import { EXRLoader } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/loaders/EXRLoader.js';
-import { PointerLockControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/PointerLockControls';
+import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
+import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader';
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 
 let canvas, scene, camera, renderer, controls;
 
@@ -120,13 +120,13 @@ function init()
     dracoLoader.setDecoderConfig({ type: 'js' });
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/');
 
-    new THREE.TextureLoader().load('./img/TEX_lightmap.png', (texture) =>
+    new THREE.TextureLoader().load('./assets/TEX_lightmap.png', (texture) =>
     {
         texture.flipY = false;
 
         const gltfLoader = new GLTFLoader(loadingManager)
         gltfLoader.setDRACOLoader(dracoLoader);
-        gltfLoader.load('./mdl/Parking.glb', (gltf) =>
+        gltfLoader.load('./assets/Parking.glb', (gltf) =>
         {
             scene.add(gltf.scene);
 
@@ -141,7 +141,7 @@ function init()
         });
     });
 
-    new EXRLoader().load('./img/kloppenheim_02_4k.exr', (texture) =>
+    new EXRLoader().load('./assets/kloppenheim_02_4k.exr', (texture) =>
     {
         texture.mapping = THREE.EquirectangularReflectionMapping;
         scene.background = texture;
