@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 
 let canvas, scene, camera, renderer, controls;
 
@@ -120,7 +121,7 @@ function init()
     dracoLoader.setDecoderConfig({ type: 'js' });
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/');
 
-    new THREE.TextureLoader().load('./assets/TEX_lightmap.png', (texture) =>
+    new RGBELoader().load('./assets/1_final.hdr', (texture) =>
     {
         texture.flipY = false;
 
@@ -135,7 +136,7 @@ function init()
                 if (child.isMesh)
                 {
                     child.material.lightMap = texture;
-                    //child.material.lightMapIntensity = 2;
+                    child.material.lightMapIntensity = 2;
                 }
             });
         });
