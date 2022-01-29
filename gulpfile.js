@@ -29,7 +29,7 @@ gulp.task('build', function ()
         .bundle()
         .pipe(source('bundle.js'))
         .pipe(buffer())
-        .pipe(uglify())
+        //.pipe(uglify())
         .pipe(gulp.dest('./dist'));
 });
 
@@ -38,7 +38,7 @@ gulp.task('startServer', function ()
     connect.server({
         root: './dist',
         livereload: true,
-        port: 8080
+        port: 8000
     });
 });
 
