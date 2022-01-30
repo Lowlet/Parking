@@ -3,14 +3,16 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
-import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls'
 
 import { AmmoPhysics, PhysicsLoader, ExtendedObject3D } from '@enable3d/ammo-physics'
 
-let moveForward = false;
-let moveBackward = false;
-let moveLeft = false;
-let moveRight = false;
+let moveForward = false
+let moveBackward = false
+let moveLeft = false
+let moveRight = false
+
+let loaded = false
 
 let canvas, scene, camera, renderer, controls
 let physics, clock, player
@@ -36,7 +38,6 @@ function init()
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
     renderer.setSize(window.innerWidth, window.innerHeight)
     //renderer.outputEncoding = THREE.sRGBEncoding
-
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     //renderer.toneMappingExposure = 0.3
 
@@ -63,14 +64,14 @@ function init()
     {
         texture.flipY = false
 
-        lightmaps.push(texture)
+        lightmaps[0] = texture
     })
 
     rgbeLoader.load('./assets/2_final.hdr', (texture) =>
     {
         texture.flipY = false
 
-        lightmaps.push(texture)
+        lightmaps[1] = texture
     })
 
     exrLoader.load('./assets/kloppenheim_02_4k.exr', (texture) =>
@@ -88,6 +89,8 @@ function init()
 
     loadingManager.onLoad = () =>
     {
+        loaded = true
+
         scene.traverse(function (child)
         {
             if (child.isMesh)
@@ -107,19 +110,15 @@ function init()
         })
 
         const collision = scene.getObjectByName('MESH_collision')
-
         physics.add.existing(collision, { shape: 'concave', mass: 0 })
-
         collision.visible = false
 
         player = scene.getObjectByName('Player')
-
         physics.add.existing(player, { shape: 'capsule', mass: 1 })
         player.body.setFriction(0.8)
         player.body.setAngularFactor(0, 0, 0)
         player.body.setCcdMotionThreshold(1e-7)
         player.body.setCcdSweptSphereRadius(0.25)
-
         player.visible = false
     }
 
@@ -205,6 +204,8 @@ function init()
 function update()
 {
     requestAnimationFrame(update)
+
+    if(!loaded) return
 
     if (controls.isLocked === true)
     {
