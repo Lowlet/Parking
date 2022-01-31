@@ -9,6 +9,7 @@
     <style>
         body {
             margin: 0;
+            overflow: hidden;
         }
 
         #blocker {
@@ -36,6 +37,9 @@
 </head>
 
 <body>
+    <audio style="display: none" id="music" preload="auto" loop>
+        <source src="./assets/aphex-twin-classics.mp3" type="audio/mpeg">
+    </audio>
     <div id="blocker">
         <div id="instructions">
             <p style="font-size:36px">

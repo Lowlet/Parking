@@ -9,8 +9,9 @@ const htmlmin = require('gulp-htmlmin');
 
 gulp.task('copyStaticFiles', function ()
 {
-    return gulp.src('./src/mdl/*.*')
-        .pipe(gulp.src('./src/img/*.*'))
+    return gulp.src('./src/model/*.*')
+        .pipe(gulp.src('./src/image/*.*'))
+        .pipe(gulp.src('./src/audio/*.*'))
         .pipe(gulp.dest('./dist/assets'));
 });
 

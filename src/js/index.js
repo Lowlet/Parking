@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
+import { PositionalAudioHelper } from 'three/examples/jsm/helpers/PositionalAudioHelper.js'
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls'
 
 import { AmmoPhysics, PhysicsLoader, ExtendedObject3D } from '@enable3d/ammo-physics'
@@ -14,8 +15,8 @@ let moveRight = false
 
 let loaded = false
 
-let canvas, scene, camera, renderer, controls
-let physics, clock, player
+let scene, camera, renderer, controls, mixer, listener, positionalAudio, audioContext, biquadFilter
+let physics, clock, player, levelCollision, doorCollision, door, lever, hiddenDoor, musicLocator
 
 let lightmaps = []
 
@@ -29,17 +30,16 @@ PhysicsLoader('/ammo', () => MainScene())
 
 function init()
 {
-    clock = new THREE.Clock()
-
-    canvas = document.getElementById('canvas')
+    const canvas = document.getElementById('canvas')
     const blocker = document.getElementById('blocker')
     const instructions = document.getElementById('instructions')
+    const audioElement = document.getElementById('music')
+
+    clock = new THREE.Clock()
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
     renderer.setSize(window.innerWidth, window.innerHeight)
-    //renderer.outputEncoding = THREE.sRGBEncoding
     renderer.toneMapping = THREE.ACESFilmicToneMapping
-    //renderer.toneMappingExposure = 0.3
 
     scene = new THREE.Scene()
 
@@ -50,12 +50,34 @@ function init()
     physics = new AmmoPhysics(scene)
     //physics.debug.enable(true)
 
+    listener = new THREE.AudioListener()
+    camera.add(listener)
+
+    positionalAudio = new THREE.PositionalAudio(listener)
+    positionalAudio.setMediaElementSource(audioElement)
+    positionalAudio.setRefDistance(10)
+    positionalAudio.setRolloffFactor(2)
+    positionalAudio.setDistanceModel('exponential')
+    positionalAudio.setDirectionalCone(180, 360, 0.2)
+
+    audioContext = positionalAudio.context
+
+    biquadFilter = audioContext.createBiquadFilter()
+    biquadFilter.type = 'lowpass'
+    biquadFilter.frequency.setValueAtTime(300, audioContext.currentTime)
+
+    positionalAudio.setFilter(biquadFilter)
+    positionalAudio.setVolume(0.5)
+    
+
+    const helper = new PositionalAudioHelper(positionalAudio, 10)
+    positionalAudio.add(helper)
+
     const loadingManager = new THREE.LoadingManager()
 
     const dracoLoader = new DRACOLoader()
     dracoLoader.setDecoderConfig({ type: 'js' })
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/')
-
     const rgbeLoader = new RGBELoader(loadingManager)
     const exrLoader = new EXRLoader(loadingManager)
     const gltfLoader = new GLTFLoader(loadingManager)
@@ -84,66 +106,127 @@ function init()
     gltfLoader.load('./assets/Parking.glb', (gltf) =>
     {
         scene.add(gltf.scene)
-        console.log(gltf.scene)
+        scene.animations = gltf.animations
+        console.log(scene)
     })
 
     loadingManager.onLoad = () =>
     {
         loaded = true
 
-        scene.traverse(function (child)
+        mixer = new THREE.AnimationMixer(scene)
+
+        scene.traverse((child) =>
         {
             if (child.isMesh)
             {
                 if (child.name.includes('_l1'))
                 {
-                    console.log('1:' + child.name)
                     child.material.lightMap = lightmaps[0]
                 }
                 else
                 {
-                    console.log('2:' + child.name)
                     child.material.lightMap = lightmaps[1]
                 }
                 child.material.lightMapIntensity = 2
             }
         })
 
-        const collision = scene.getObjectByName('MESH_collision')
-        physics.add.existing(collision, { shape: 'concave', mass: 0 })
-        collision.visible = false
-
+        door = scene.getObjectByName('MESH_door')
+        doorCollision = scene.getObjectByName('COLLISION_door')
+        lever = scene.getObjectByName('MESH_lever')
+        levelCollision = scene.getObjectByName('COLLISION_level')
+        hiddenDoor = scene.getObjectByName('MESH_hiddenDoor')
         player = scene.getObjectByName('Player')
-        physics.add.existing(player, { shape: 'capsule', mass: 1 })
-        player.body.setFriction(0.8)
+        musicLocator = scene.getObjectByName('LOCATOR_music')
+
+        musicLocator.add(positionalAudio)
+
+        physics.add.existing(levelCollision, { shape: 'concave', mass: 0 })
+        levelCollision.visible = false
+
+        physics.add.existing(doorCollision, { shape: 'convex' })
+        doorCollision.body.setCollisionFlags(2)
+        doorCollision.visible = false
+
+        physics.add.existing(hiddenDoor, { shape: 'convex' })
+        hiddenDoor.body.setCollisionFlags(2)
+
+        physics.add.existing(player, { shape: 'convex', mass: 1 })
+        player.body.setFriction(0.5)
         player.body.setAngularFactor(0, 0, 0)
         player.body.setCcdMotionThreshold(1e-7)
-        player.body.setCcdSweptSphereRadius(0.25)
+        player.body.setCcdSweptSphereRadius(0.5)
         player.visible = false
+
+        document.addEventListener('mousedown', () =>
+        {
+            var distanceToDoor = player.position.distanceTo(door.position)
+
+            if (distanceToDoor < 4)
+            {
+                scene.animations.forEach((animation) =>
+                {
+                    if (animation.name === 'ANIM_door')
+                    {
+                        const action = mixer.clipAction(animation)
+                        action.clampWhenFinished = true
+                        action.setLoop(THREE.LoopOnce)
+                        action.play()
+
+                        biquadFilter.frequency.linearRampToValueAtTime(2400, audioContext.currentTime + 3);
+                    }
+                })
+            }
+
+            var distanceToLever = player.position.distanceTo(lever.position)
+
+            if (distanceToLever < 4)
+            {
+                scene.animations.forEach((animation) =>
+                {
+                    if (animation.name === 'ANIM_lever')
+                    {
+                        const action = mixer.clipAction(animation)
+                        action.clampWhenFinished = true
+                        action.setLoop(THREE.LoopOnce)
+                        action.play()
+                    }
+
+                    if (animation.name === 'ANIM_hiddenDoor')
+                    {
+                        const action = mixer.clipAction(animation)
+                        action.clampWhenFinished = true
+                        action.setLoop(THREE.LoopOnce)
+                        action.play()
+                    }
+                })
+            }
+        })
     }
 
     controls = new PointerLockControls(camera, renderer.domElement)
 
-    instructions.addEventListener('click', function ()
+    instructions.addEventListener('click', () =>
     {
         controls.lock()
+        audioElement.play()
+        listener.context.resume()
     })
 
-    controls.addEventListener('lock', function ()
+    controls.addEventListener('lock', () =>
     {
         instructions.style.display = 'none'
         blocker.style.display = 'none'
     })
 
-    controls.addEventListener('unlock', function ()
+    controls.addEventListener('unlock', () =>
     {
         blocker.style.display = 'block'
         instructions.style.display = ''
     })
 
-    scene.add(controls.getObject())
-
-    const onKeyDown = function (event)
+    document.addEventListener('keydown', (event) =>
     {
         switch (event.code)
         {
@@ -167,9 +250,9 @@ function init()
                 moveRight = true
                 break
         }
-    }
+    })
 
-    const onKeyUp = function (event)
+    document.addEventListener('keyup', (event) =>
     {
         switch (event.code)
         {
@@ -193,10 +276,7 @@ function init()
                 moveRight = false
                 break
         }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    document.addEventListener('keyup', onKeyUp)
+    })
 
     window.addEventListener('resize', onWindowResize)
 }
@@ -205,11 +285,13 @@ function update()
 {
     requestAnimationFrame(update)
 
-    if(!loaded) return
+    const delta = clock.getDelta()
+
+    if (!loaded) return
 
     if (controls.isLocked === true)
     {
-        physics.update(clock.getDelta() * 1000)
+        physics.update(delta * 1000)
         physics.updateDebugger()
 
         // Rotate player
@@ -262,10 +344,18 @@ function update()
 
         player.body.setVelocity(x, player.body.velocity.y, z)
 
-        camera.position.copy(player.position.clone().add(new THREE.Vector3(0, 1.3, 0)))
+        camera.position.copy(player.position.clone().add(new THREE.Vector3(0, 1, 0)))
+
+        // Rotate door collider
+        doorCollision.rotation.copy(door.rotation)
+        doorCollision.body.needUpdate = true
+
+        hiddenDoor.body.needUpdate = true
+
+        // Update animations
+        mixer.update(delta)
     }
 
-    //controls.update(delta)
     renderer.render(scene, camera)
 }
 
