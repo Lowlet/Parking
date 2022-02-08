@@ -125,7 +125,7 @@ function loadResources()
 
     gltfLoader.load('./assets/Zuckerberg.glb', (gltf) =>
     {
-        const light = new THREE.AmbientLight('#ff5c1c')
+        const light = new THREE.AmbientLight('#CC4916')
         scene1.add(light)
 
         zuckerberg = SkeletonUtils.clone(gltf.scene)
@@ -268,7 +268,7 @@ function loadResources()
 
 function setupEvents()
 {
-    document.addEventListener('onmousedown', () =>
+    canvas.addEventListener('click', () =>
     {
         if (!loaded) return
 
