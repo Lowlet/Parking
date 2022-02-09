@@ -17,7 +17,7 @@ let lightmaps = []
 let intersected
 
 let canvas, blocker, audioElement, loaderPercent, loaderBar
-let scene, scene1, camera, renderer, controls, mixer, mixer1, listener, musicLocator, positionalAudio, audioContext, biquadFilter, raycaster
+let scene, scene1, camera, renderer, controls, mixer, mixer1, listener, musicLocator, positionalAudio, audioContext, biquadFilter, cameraRaycaster, playerRaycaster
 let physics, clock, player, levelCollision, doorCollision, door, leverCollision, cageCollision, laptopCollision, hiddenDoor, doorOpened = false
 let torchBillboards = [], torchMaterial, torchAnimator, fireplaceMaterial, fireplaceAnimator, emissiveMaterial, emissiveFloorMaterial
 let zuckerberg, zuckerbergLocator
@@ -40,9 +40,12 @@ function init()
 
     clock = new THREE.Clock()
 
-    raycaster = new THREE.Raycaster()
-    raycaster.far = 4
-    raycaster.layers.set(0)
+    cameraRaycaster = new THREE.Raycaster()
+    cameraRaycaster.far = 4
+    cameraRaycaster.layers.set(0)
+
+    playerRaycaster = new THREE.Raycaster()
+    playerRaycaster.layers.set(0)
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
     renderer.setSize(window.innerWidth, window.innerHeight)
@@ -156,6 +159,7 @@ function loadResources()
 
         gsap.fromTo('#loader', { autoAlpha: 1 }, { autoAlpha: 0, delay: 0.5, duration: 0.5 })
         gsap.fromTo('#instructions', { autoAlpha: 0 }, { autoAlpha: 1, delay: 0.5, duration: 0.5 })
+        gsap.to('.instructions__title', { opacity: 0.2, delay: 1, duration: 1, ease: 'power1.in', repeat: -1, yoyo: true })
 
         mixer = new THREE.AnimationMixer(scene)
 
@@ -419,12 +423,13 @@ function update()
 {
     requestAnimationFrame(update)
 
-    const delta = clock.getDelta()
-
     if (!loaded) return
+
+    const delta = clock.getDelta()
 
     if (controls.isLocked === true)
     {
+        // Update physics
         physics.update(delta * 1000)
         physics.updateDebugger()
 
@@ -477,14 +482,32 @@ function update()
             z += Math.cos(theta - Math.PI * 0.5) * speed
         }
 
-        player.body.setVelocity(x, player.body.velocity.y, z)
+        const velocity = new THREE.Vector3(x, player.body.velocity.y, z)
 
+        // Raycast down from player position
+        playerRaycaster.set(player.position, new THREE.Vector3(0, -1, 0))
+
+        // Get ground hits
+        const groundIntersects = playerRaycaster.intersectObjects(scene.children, true)
+
+        if (groundIntersects.length > 0)
+        {
+            // Ground normal
+            const normal = groundIntersects[0].face.normal.normalize()
+            // Project player velocity on ground plane
+            const projectedVelocity = velocity.projectOnPlane(normal)
+            // Set player velocity
+            player.body.setVelocity(projectedVelocity.x, projectedVelocity.y, projectedVelocity.z)
+        }
+
+        // Set camera position to the center of player and move up by 1 unit
         camera.position.copy(player.position.clone().add(new THREE.Vector3(0, 1, 0)))
 
-        // Rotate door collider
+        // Update door collider with animation
         doorCollision.rotation.copy(door.rotation)
         doorCollision.body.needUpdate = true
 
+        // Update hidden door collider with animation
         hiddenDoor.body.needUpdate = true
 
         // Rotate billboards
@@ -500,10 +523,10 @@ function update()
         // Emissive material animation
         emissiveMaterial.emissiveMap.offset.x += delta / 15
 
-        // Raycast
-        raycaster.setFromCamera(new THREE.Vector2(), camera)
+        // Raycast from camera
+        cameraRaycaster.setFromCamera(new THREE.Vector2(), camera)
 
-        const intersects = raycaster.intersectObjects(scene.children)
+        const intersects = cameraRaycaster.intersectObjects(scene.children)
 
         if (intersects.length > 0)
         {
@@ -568,7 +591,6 @@ function changeMaterialOffset()
 function TextureAnimator(texture, tilesHoriz, tilesVert, numTiles, tileDispDuration) 
 {
     // note: texture passed by reference, will be updated by the update function.
-
     this.tilesHorizontal = tilesHoriz
     this.tilesVertical = tilesVert
     // how many images does this spritesheet contain?

@@ -9,8 +9,11 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Jost:wght@100..900&display=swap');
 
-        body {
+        * {
             margin: 0;
+        }
+
+        body {
             overflow: hidden;
             font-family: 'Jost', sans-serif;
             font-size: 14px;
@@ -41,12 +44,39 @@
             text-align: center;
         }
 
-        .instructions__subtitle {
+        .keymapping {
+            position: absolute;
+            width: 500px;
+            left: calc(50% - 250px);
+            bottom: 60px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        .keymapping__container {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .keymapping__key {
+            width: fit-content;
+            padding: 0 4px;
+            margin: 0 10px 0 0;
+            color: #070709;
+            background-color: #cbcbcb;
+            font-size: 14px;
+            font-weight: 800;
+            text-align: center;
+            border-radius: 4px;
+        }
+
+        .keymapping__action {
             color: #7f86a1;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 2px;
-            text-align: center;
+            text-align: left;
         }
 
         .loader {
@@ -126,10 +156,20 @@
     <div class="blocker" id="blocker">
         <div class="instructions" id="instructions">
             <p class="instructions__title">CLICK TO PLAY</p>
-            <p class="instructions__subtitle">
-                MOVE: WASD<br />
-                LOOK: MOUSE
-            </p>
+            <div class="keymapping">
+                <div class="keymapping__container">
+                    <p class="keymapping__key">WASD</p>
+                    <p class="keymapping__action">Move</p>
+                </div>
+                <div class="keymapping__container">
+                    <p class="keymapping__key">MOUSE</p>
+                    <p class="keymapping__action">Look</p>
+                </div>
+                <div class="keymapping__container">
+                    <p class="keymapping__key">LMB</p>
+                    <p class="keymapping__action">Interact</p>
+                </div>
+            </div>
         </div>
     </div>
     <div class="loader" id="loader">
