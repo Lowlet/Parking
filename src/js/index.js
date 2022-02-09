@@ -28,7 +28,7 @@ const MainScene = () =>
     update()
 }
 
-PhysicsLoader('/ammo', () => MainScene())
+PhysicsLoader('./js/ammo', () => MainScene())
 
 function init()
 {
@@ -98,35 +98,35 @@ function loadResources()
     const exrLoader = new EXRLoader(loadingManager)
     const gltfLoader = new GLTFLoader(loadingManager)
 
-    rgbeLoader.load('./assets/1_final.hdr', (texture) =>
+    rgbeLoader.load('./images/1_final.hdr', (texture) =>
     {
         texture.flipY = false
 
         lightmaps[0] = texture
     })
 
-    rgbeLoader.load('./assets/2_final.hdr', (texture) =>
+    rgbeLoader.load('./images/2_final.hdr', (texture) =>
     {
         texture.flipY = false
 
         lightmaps[1] = texture
     })
 
-    exrLoader.load('./assets/kloppenheim_02_4k.exr', (texture) =>
+    exrLoader.load('./images/kloppenheim_02_4k.exr', (texture) =>
     {
         texture.mapping = THREE.EquirectangularReflectionMapping
         scene.background = texture
     })
 
     gltfLoader.setDRACOLoader(dracoLoader)
-    gltfLoader.load('./assets/Parking.glb', (gltf) =>
+    gltfLoader.load('./models/Parking.glb', (gltf) =>
     {
         scene.add(gltf.scene)
         scene.animations = gltf.animations
         console.log(scene)
     })
 
-    gltfLoader.load('./assets/Zuckerberg.glb', (gltf) =>
+    gltfLoader.load('./models/Zuckerberg.glb', (gltf) =>
     {
         const light = new THREE.AmbientLight('#CC4916')
         scene1.add(light)

@@ -4,15 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node app"
+    "start": "gulp",
+    "build": "gulp build"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@enable3d/ammo-physics": "^0.25.0",
-    "express": "^4.17.2",
     "gsap": "^3.9.1",
-    "jquery": "^3.6.0",
     "three": "^0.136.0"
   },
   "devDependencies": {
@@ -21,11 +20,13 @@
     "@babel/preset-env": "^7.16.8",
     "babel-preset-es2015": "^6.24.1",
     "babelify": "^10.0.0",
+    "browser-sync": "^2.27.7",
     "browserify": "^17.0.0",
     "gulp": "^4.0.2",
-    "gulp-connect": "^5.7.0",
     "gulp-htmlmin": "^5.0.1",
+    "gulp-sass": "^5.1.0",
     "gulp-uglify": "^3.0.2",
+    "sass": "^1.49.7",
     "vinyl-buffer": "^1.0.1",
     "vinyl-source-stream": "^2.0.0"
   },
