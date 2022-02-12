@@ -7,8 +7,10 @@ const browserify = require('browserify')
 const source = require('vinyl-source-stream')
 const buffer = require('vinyl-buffer')
 const htmlmin = require('gulp-htmlmin')
+const autoprefixer = require('autoprefixer')
+const postcss = require('gulp-postcss')
 
-gulp.task('copyStaticFiles', (done) =>
+gulp.task('copy', (done) =>
 {
     gulp.src('./src/models/*.*')
         .pipe(gulp.dest('./dist/models'))
@@ -29,7 +31,7 @@ gulp.task('html', () =>
 {
     return gulp.src('src/**.html')
         .pipe(htmlmin({ collapseWhitespace: true }))
-        .pipe(gulp.dest('dist'))
+        .pipe(gulp.dest('./dist'))
 })
 
 gulp.task('js', () =>
@@ -46,8 +48,9 @@ gulp.task('js', () =>
 
 gulp.task('sass', () =>
 {
-    return gulp.src('./src/scss/*.scss')
+    return gulp.src('./src/scss/**/*.scss')
         .pipe(sass({ outputStyle: 'compressed' }).on('error', sass.logError))
+        .pipe(postcss([autoprefixer()]))
         .pipe(gulp.dest('./src/css'))
         .pipe(browserSync.stream())
 })
@@ -64,4 +67,4 @@ gulp.task('serve', gulp.series('js', 'sass', () =>
 }))
 
 gulp.task('default', gulp.series('serve'))
-gulp.task('build', gulp.series('sass', 'js', 'copyStaticFiles', 'html'))
+gulp.task('build', gulp.series('sass', 'js', 'copy', 'html'))

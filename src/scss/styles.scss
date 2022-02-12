@@ -2,6 +2,8 @@
 
 * {
     margin: 0;
+    user-select: none;
+    touch-action: none;
 }
 
 body {
@@ -20,11 +22,11 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    backdrop-filter: blur(50px);
 }
 
 .instructions {
     opacity: 0;
-    user-select: none;
 
     &__title {
         color: #cbcbcb;
@@ -37,33 +39,37 @@ body {
 
 .keymapping {
     position: absolute;
-    width: 500px;
-    left: calc(50% - 250px);
+    width: 100%;
+    max-width: 500px;
     bottom: 60px;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    opacity: 0;
 
     &__container {
         display: flex;
         flex-direction: row;
+        align-items: center;
     }
 
     &__key {
-        width: fit-content;
+        width: auto;
+        height: 20px;
         padding: 0 4px;
         margin: 0 10px 0 0;
         color: #070709;
         background-color: #cbcbcb;
         font-size: 14px;
         font-weight: 800;
+        letter-spacing: 1px;
         text-align: center;
         border-radius: 4px;
     }
 
     &__action {
         color: #7f86a1;
-        font-size: 14px;
+        font-size: 16px;
         font-weight: 400;
         letter-spacing: 2px;
         text-align: left;
