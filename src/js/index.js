@@ -16,9 +16,9 @@ let loaded = false
 let lightmaps = []
 let intersected
 
-let canvas, blocker, audioElement, loaderPercent, loaderBar
-let scene, scene1, camera, renderer, controls, mixer, mixer1, listener, musicLocator, positionalAudio, audioContext, biquadFilter, cameraRaycaster, playerRaycaster
-let physics, clock, player, levelCollision, doorCollision, door, leverCollision, cageCollision, laptopCollision, hiddenDoor, doorOpened = false
+let canvas, blocker, audioElement, loaderPercent, loaderBar, interactText
+let scene, scene1, camera, renderer, controls, mixer, mixer1, listener, pmremGenerator, reflectionProbe, musicLocator, positionalAudio, audioContext, biquadFilter, cameraRaycaster, playerRaycaster
+let physics, clock, player, levelCollision, doorCollision, door, leverCollision, cageCollision, laptopCollision, hiddenDoor, doorOpened = false, discoBall
 let torchBillboards = [], torchMaterial, torchAnimator, fireplaceMaterial, fireplaceAnimator, emissiveMaterial, emissiveFloorMaterial
 let zuckerberg, zuckerbergLocator
 
@@ -37,6 +37,7 @@ function init()
     audioElement = document.getElementById('music')
     loaderPercent = document.getElementById('loader__percent')
     loaderBar = document.getElementById('loader__bar')
+    interactText = document.getElementById('interact__text')
 
     clock = new THREE.Clock()
 
@@ -82,6 +83,9 @@ function init()
     positionalAudio.setFilter(biquadFilter)
     positionalAudio.setVolume(0.5)
 
+    pmremGenerator = new THREE.PMREMGenerator(renderer)
+    pmremGenerator.compileEquirectangularShader()
+
     //const helper = new PositionalAudioHelper(positionalAudio, 10)
     //positionalAudio.add(helper)
 
@@ -116,6 +120,12 @@ function loadResources()
     {
         texture.mapping = THREE.EquirectangularReflectionMapping
         scene.background = texture
+    })
+
+    exrLoader.load('./images/ReflectionProbe.exr', (texture) =>
+    {
+        reflectionProbe = pmremGenerator.fromEquirectangular(texture)
+        pmremGenerator.dispose()
     })
 
     gltfLoader.setDRACOLoader(dracoLoader)
@@ -157,8 +167,10 @@ function loadResources()
     {
         loaded = true
 
+        gsap.to('#blocker', { backgroundColor: '#07070999', delay: 0.5, duration: 0.5 })
         gsap.fromTo('#loader', { autoAlpha: 1 }, { autoAlpha: 0, delay: 0.5, duration: 0.5 })
-        gsap.fromTo('#instructions', { autoAlpha: 0 }, { autoAlpha: 1, delay: 0.5, duration: 0.5 })
+        gsap.fromTo('.instructions', { autoAlpha: 0 }, { autoAlpha: 1, delay: 0.5, duration: 0.5 })
+        gsap.fromTo('.keymapping', { autoAlpha: 0 }, { autoAlpha: 1, delay: 0.5, duration: 0.5 })
         gsap.to('.instructions__title', { opacity: 0.2, delay: 1, duration: 1, ease: 'power1.in', repeat: -1, yoyo: true })
 
         mixer = new THREE.AnimationMixer(scene)
@@ -199,6 +211,11 @@ function loadResources()
                         changeMaterialOffset()
                     }
 
+                    if (child.material.name === 'MAT_discoball')
+                    {
+                        child.material.envMap = reflectionProbe.texture
+                    }
+
                     child.material.lightMapIntensity = 1.5
                 }
 
@@ -230,6 +247,7 @@ function loadResources()
         player = scene.getObjectByName('Player')
         musicLocator = scene.getObjectByName('LOCATOR_music')
         zuckerbergLocator = scene.getObjectByName('LOCATOR_zuckerberg')
+        discoBall = scene.getObjectByName('MESH_discoball')
 
         physics.add.existing(levelCollision, { shape: 'concave', mass: 0 })
         levelCollision.visible = false
@@ -523,6 +541,9 @@ function update()
         // Emissive material animation
         emissiveMaterial.emissiveMap.offset.x += delta / 15
 
+        // Disco ball rotation
+        discoBall.rotateY(THREE.MathUtils.degToRad(30) * delta)
+
         // Raycast from camera
         cameraRaycaster.setFromCamera(new THREE.Vector2(), camera)
 
@@ -532,12 +553,25 @@ function update()
         {
             if (intersected != intersects[0].object)
             {
-                if (intersected)
-                {
-                }
                 intersected = intersects[0].object
-            }
 
+                if (intersected.name === 'COLLISION_door')
+                {
+                    interactText.innerHTML = 'OPEN DOOR'
+                }
+                if (intersected.name === 'COLLISION_lever')
+                {
+                    interactText.innerHTML = 'USE LEVER'
+                }
+                if (intersected.name === 'COLLISION_cage')
+                {
+                    interactText.innerHTML = 'OPEN TWITTER'
+                }
+                if (intersected.name === 'COLLISION_laptop')
+                {
+                    interactText.innerHTML = 'OPEN DISCORD'
+                }
+            }
         }
         else
         {
