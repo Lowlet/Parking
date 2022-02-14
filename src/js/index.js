@@ -17,8 +17,9 @@ let lightmaps = []
 let intersected
 
 let canvas, blocker, audioElement, loaderPercent, loaderBar, interactText
+let levelCollision, doorCollision, cageCollision, laptopCollision, foxCollision, leverCollision, button1Collision, button2Collision, button3Collision
 let scene, scene1, camera, renderer, controls, mixer, mixer1, listener, pmremGenerator, reflectionProbe, musicLocator, positionalAudio, audioContext, biquadFilter, cameraRaycaster, playerRaycaster
-let physics, clock, player, levelCollision, doorCollision, door, leverCollision, cageCollision, laptopCollision, hiddenDoor, doorOpened = false, discoBall
+let physics, clock, player, door, hiddenDoor, doorOpened = false, discoBall, doorHoverText = 'OPEN DOOR'
 let torchBillboards = [], torchMaterial, torchAnimator, fireplaceMaterial, fireplaceAnimator, emissiveMaterial, emissiveFloorMaterial
 let zuckerberg, zuckerbergLocator
 
@@ -238,12 +239,16 @@ function loadResources()
         fireplaceAnimator = new TextureAnimator(fireplaceMaterial.emissiveMap, 8, 8, 64, 50)
 
         door = scene.getObjectByName('MESH_door')
-        doorCollision = scene.getObjectByName('COLLISION_door')
-        leverCollision = scene.getObjectByName('COLLISION_lever')
         levelCollision = scene.getObjectByName('COLLISION_level')
+        doorCollision = scene.getObjectByName('COLLISION_door')
         cageCollision = scene.getObjectByName('COLLISION_cage')
         laptopCollision = scene.getObjectByName('COLLISION_laptop')
+        foxCollision = scene.getObjectByName('COLLISION_fox')
+        leverCollision = scene.getObjectByName('COLLISION_lever')
         hiddenDoor = scene.getObjectByName('MESH_hiddenDoor')
+        button1Collision = scene.getObjectByName('COLLISION_button_01')
+        button2Collision = scene.getObjectByName('COLLISION_button_02')
+        button3Collision = scene.getObjectByName('COLLISION_button_03')
         player = scene.getObjectByName('Player')
         musicLocator = scene.getObjectByName('LOCATOR_music')
         zuckerbergLocator = scene.getObjectByName('LOCATOR_zuckerberg')
@@ -256,10 +261,6 @@ function loadResources()
         doorCollision.body.setCollisionFlags(2)
         doorCollision.visible = false
 
-        physics.add.existing(leverCollision, { shape: 'convex' })
-        leverCollision.body.setCollisionFlags(2)
-        leverCollision.visible = false
-
         physics.add.existing(cageCollision, { shape: 'convex' })
         cageCollision.body.setCollisionFlags(2)
         cageCollision.visible = false
@@ -268,8 +269,28 @@ function loadResources()
         laptopCollision.body.setCollisionFlags(2)
         laptopCollision.visible = false
 
+        physics.add.existing(foxCollision, { shape: 'convex' })
+        foxCollision.body.setCollisionFlags(2)
+        foxCollision.visible = false
+
+        physics.add.existing(leverCollision, { shape: 'convex' })
+        leverCollision.body.setCollisionFlags(2)
+        leverCollision.visible = false
+
         physics.add.existing(hiddenDoor, { shape: 'convex' })
         hiddenDoor.body.setCollisionFlags(2)
+
+        physics.add.existing(button1Collision, { shape: 'convex' })
+        button1Collision.body.setCollisionFlags(2)
+        button1Collision.visible = false
+
+        physics.add.existing(button2Collision, { shape: 'convex' })
+        button2Collision.body.setCollisionFlags(2)
+        button2Collision.visible = false
+
+        physics.add.existing(button3Collision, { shape: 'convex' })
+        button3Collision.body.setCollisionFlags(2)
+        button3Collision.visible = false
 
         physics.add.existing(player, { shape: 'convex', mass: 1 })
         player.body.setFriction(0.5)
@@ -314,11 +335,13 @@ function setupEvents()
                             biquadFilter.frequency.setValueAtTime(biquadFilter.frequency.value, audioContext.currentTime)
                             biquadFilter.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 1)
                         }
+                        interactText.innerHTML = doorHoverText = 'OPEN DOOR'
                     }
                     else
                     {
                         biquadFilter.frequency.setValueAtTime(biquadFilter.frequency.value, audioContext.currentTime)
                         biquadFilter.frequency.exponentialRampToValueAtTime(24000, audioContext.currentTime + 1)
+                        interactText.innerHTML = doorHoverText = 'CLOSE DOOR'
                     }
 
                     action.paused = false
@@ -359,6 +382,29 @@ function setupEvents()
         if (intersected && intersected.name === 'COLLISION_laptop')
         {
             window.open('https://www.discord.com')
+        }
+
+        if (intersected && intersected.name === 'COLLISION_fox')
+        {
+            // Fox onclick logic
+        }
+
+        if (intersected && intersected === button1Collision)
+        {
+            playButtonAnimation('ANIM_button_01')
+            // Button1 onclick logic
+        }
+
+        if (intersected && intersected === button2Collision)
+        {
+            playButtonAnimation('ANIM_button_02')
+            // Button2 onclick logic
+        }
+
+        if (intersected && intersected === button3Collision)
+        {
+            playButtonAnimation('ANIM_button_03')
+            // Button3 onclick logic
         }
     })
 
@@ -542,7 +588,7 @@ function update()
         emissiveMaterial.emissiveMap.offset.x += delta / 15
 
         // Disco ball rotation
-        discoBall.rotateY(THREE.MathUtils.degToRad(30) * delta)
+        discoBall.rotateY(THREE.MathUtils.degToRad(50) * delta)
 
         // Raycast from camera
         cameraRaycaster.setFromCamera(new THREE.Vector2(), camera)
@@ -557,7 +603,7 @@ function update()
 
                 if (intersected.name === 'COLLISION_door')
                 {
-                    interactText.innerHTML = 'OPEN DOOR'
+                    interactText.innerHTML = doorHoverText
                 }
                 if (intersected.name === 'COLLISION_lever')
                 {
@@ -570,6 +616,22 @@ function update()
                 if (intersected.name === 'COLLISION_laptop')
                 {
                     interactText.innerHTML = 'OPEN DISCORD'
+                }
+                if (intersected.name === 'COLLISION_fox')
+                {
+                    interactText.innerHTML = 'CONNECT WALLET'
+                }
+                if (intersected.name === 'COLLISION_button_01')
+                {
+                    interactText.innerHTML = 'PRESS BUTTON 1'
+                }
+                if (intersected.name === 'COLLISION_button_02')
+                {
+                    interactText.innerHTML = 'PRESS BUTTON 2'
+                }
+                if (intersected.name === 'COLLISION_button_03')
+                {
+                    interactText.innerHTML = 'PRESS BUTTON 3'
                 }
             }
         }
@@ -584,7 +646,11 @@ function update()
         if (intersected && intersected.name === 'COLLISION_door' ||
             intersected && intersected.name === 'COLLISION_lever' ||
             intersected && intersected.name === 'COLLISION_cage' ||
-            intersected && intersected.name === 'COLLISION_laptop')
+            intersected && intersected.name === 'COLLISION_laptop' ||
+            intersected && intersected.name === 'COLLISION_fox' ||
+            intersected && intersected.name === 'COLLISION_button_01' ||
+            intersected && intersected.name === 'COLLISION_button_02' ||
+            intersected && intersected.name === 'COLLISION_button_03')
         {
             gsap.to('#dot', { width: '10px', height: '10px', backgroundColor: 'rgba(203, 203, 203, 0)', duration: 0.1 })
             gsap.to('#interact__container', { autoAlpha: 1, delay: 0.2, duration: 0.2 })
@@ -620,6 +686,26 @@ function changeMaterialOffset()
     emissiveFloorMaterial.emissiveMap.offset.y += 3 / 8
 
     setTimeout(() => changeMaterialOffset(), 400)
+}
+
+function playButtonAnimation(button)
+{
+    const action = mixer.clipAction(getAnimationByName(scene.animations, button))
+    action.setLoop(THREE.LoopOnce)
+    action.stop()
+    action.play()
+}
+
+function getAnimationByName(arr, name)
+{
+    for (var i = 0; i < arr.length; i++)
+    {
+        if (arr[i].name == name)
+        {
+            return arr[i]
+        }
+    }
+    return undefined
 }
 
 function TextureAnimator(texture, tilesHoriz, tilesVert, numTiles, tileDispDuration) 
