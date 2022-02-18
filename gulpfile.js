@@ -42,7 +42,7 @@ gulp.task('js', () =>
         .bundle()
         .pipe(source('bundle.js'))
         .pipe(buffer())
-        .pipe(uglify())
+        //.pipe(uglify())
         .pipe(gulp.dest('./src/js'))
 })
 

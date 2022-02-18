@@ -14,14 +14,17 @@ import gsap from 'gsap'
 let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false
 let loaded = false
 let lightmaps = []
+let mixers = []
 let intersected
 
 let canvas, blocker, audioElement, loaderPercent, loaderBar, interactText
 let levelCollision, doorCollision, cageCollision, laptopCollision, foxCollision, leverCollision, button1Collision, button2Collision, button3Collision
-let scene, scene1, camera, renderer, controls, mixer, mixer1, listener, pmremGenerator, reflectionProbe, musicLocator, positionalAudio, audioContext, biquadFilter, cameraRaycaster, playerRaycaster
+let scene, camera, renderer, controls, mixer, mixer1, mixer2, listener, pmremGenerator, musicLocator, positionalAudio, audioContext, biquadFilter, cameraRaycaster, playerRaycaster
 let physics, clock, player, door, hiddenDoor, doorOpened = false, discoBall, doorHoverText = 'OPEN DOOR'
-let torchBillboards = [], torchMaterial, torchAnimator, fireplaceMaterial, fireplaceAnimator, emissiveMaterial, emissiveFloorMaterial
-let zuckerberg, zuckerbergLocator
+let torchBillboards = [], torchMaterial, torchAnimator, fireplaceMaterial, fireplaceAnimator, emissiveMaterial, emissiveFloorMaterial, bubblesMaterial
+let zuckerberg, buterin, baby1, baby2, baby3, baby4
+let zuckerbergLocator, buterinLocator, baby1Locator, baby2Locator, baby3Locator, baby4Locator
+let reflectionProbe, reflectionProbe1, reflectionProbe2, reflectionProbe3
 
 const MainScene = () =>
 {
@@ -49,16 +52,19 @@ function init()
     playerRaycaster = new THREE.Raycaster()
     playerRaycaster.layers.set(0)
 
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, stencil: false })
     renderer.setSize(window.innerWidth, window.innerHeight)
+    //renderer.outputEncoding = THREE.sRGBEncoding
+    //renderer.gammaFactor = 2.2;
     renderer.toneMapping = THREE.ACESFilmicToneMapping
+    //renderer.toneMappingExposure = 0.3
 
     scene = new THREE.Scene()
-    scene1 = new THREE.Scene()
 
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000)
     camera.position.set(-5, 0.8, -31.5)
     camera.rotation.set(0, -Math.PI / 2, 0)
+    camera.layers.enable(1)
 
     controls = new PointerLockControls(camera, renderer.domElement)
 
@@ -129,32 +135,102 @@ function loadResources()
         pmremGenerator.dispose()
     })
 
+    exrLoader.load('./images/ReflectionProbe1.exr', (texture) =>
+    {
+        reflectionProbe1 = pmremGenerator.fromEquirectangular(texture)
+        pmremGenerator.dispose()
+    })
+
+    exrLoader.load('./images/ReflectionProbe2.exr', (texture) =>
+    {
+        reflectionProbe2 = pmremGenerator.fromEquirectangular(texture)
+        pmremGenerator.dispose()
+    })
+
+    exrLoader.load('./images/ReflectionProbe3.exr', (texture) =>
+    {
+        reflectionProbe3 = pmremGenerator.fromEquirectangular(texture)
+        pmremGenerator.dispose()
+    })
+
     gltfLoader.setDRACOLoader(dracoLoader)
     gltfLoader.load('./models/Parking.glb', (gltf) =>
     {
         scene.add(gltf.scene)
         scene.animations = gltf.animations
+        scene.traverse((child) =>
+        {
+            if (!child.name.includes('COLLISION'))
+            {
+                child.layers.set(1)
+            }
+        })
         console.log(scene)
     })
 
     gltfLoader.load('./models/Zuckerberg.glb', (gltf) =>
     {
-        const light = new THREE.AmbientLight('#CC4916')
-        scene1.add(light)
-
         zuckerberg = SkeletonUtils.clone(gltf.scene)
         zuckerberg.traverse((child) =>
         {
             if (child.isMesh)
             {
                 child.frustumCulled = false
+                child.material.map.encoding = THREE.LinearEncoding
+                child.material.envMap = reflectionProbe3.texture
             }
+            child.layers.set(1)
         })
 
         mixer1 = new THREE.AnimationMixer(zuckerberg)
         mixer1.clipAction(gltf.animations[0]).play()
 
-        scene1.add(zuckerberg)
+        scene.add(zuckerberg)
+
+    })
+
+    gltfLoader.load('./models/Buterin.glb', (gltf) =>
+    {
+        buterin = SkeletonUtils.clone(gltf.scene)
+        buterin.traverse((child) =>
+        {
+            if (child.isMesh)
+            {
+                child.material.map.encoding = THREE.LinearEncoding
+                child.material.envMap = reflectionProbe.texture
+                child.material.envMapIntensity = 2
+            }
+            child.layers.set(1)
+        })
+
+        mixer2 = new THREE.AnimationMixer(buterin)
+        mixer2.clipAction(gltf.animations[0]).play()
+
+        scene.add(buterin)
+    })
+
+    gltfLoader.load('./models/Baby.glb', (gltf) =>
+    {
+        baby1 = SkeletonUtils.clone(gltf.scene)
+        baby2 = SkeletonUtils.clone(gltf.scene)
+        baby3 = SkeletonUtils.clone(gltf.scene)
+        baby4 = SkeletonUtils.clone(gltf.scene)
+
+        const mixer1 = new THREE.AnimationMixer(baby1)
+        const mixer2 = new THREE.AnimationMixer(baby2)
+        const mixer3 = new THREE.AnimationMixer(baby3)
+        const mixer4 = new THREE.AnimationMixer(baby4)
+
+        const action = mixer1.clipAction(gltf.animations[2])
+        action.timeScale = 0.25
+        action.play()
+
+        mixer2.clipAction(gltf.animations[1]).play()
+        mixer3.clipAction(gltf.animations[0]).play()
+        mixer4.clipAction(gltf.animations[0]).play()
+
+        scene.add(baby1, baby2, baby3, baby4)
+        mixers.push(mixer1, mixer2, mixer3, mixer4)
     })
 
     loadingManager.onProgress = (url, itemsLoaded, itemsTotal) =>
@@ -178,6 +254,15 @@ function loadResources()
 
         scene.traverse((child) =>
         {
+            traverseBaby(baby1, reflectionProbe2)
+            traverseBaby(baby2, reflectionProbe1)
+            traverseBaby(baby3, reflectionProbe)
+            traverseBaby(baby4, reflectionProbe)
+            /*             if (child.name !== 'Player' || !child.name.includes('COLLISION'))
+                        {
+                            child.matrixAutoUpdate = false
+                        } */
+
             if (child.isMesh)
             {
                 if (child.material)
@@ -217,6 +302,23 @@ function loadResources()
                         child.material.envMap = reflectionProbe.texture
                     }
 
+                    if (child.material.name === 'MAT_glass')
+                    {
+                        child.material = new THREE.MeshPhysicalMaterial({
+                            lightMap: lightmaps[1],
+                            roughness: 0,
+                            transmission: 1,
+                            thickness: 0.1,
+                            envMap: reflectionProbe2.texture
+                        })
+                    }
+
+                    if (child.material.name === 'MAT_bubbles')
+                    {
+                        bubblesMaterial = child.material
+                        bubblesMaterial.lightMap = lightmaps[1]
+                    }
+
                     child.material.lightMapIntensity = 1.5
                 }
 
@@ -250,8 +352,15 @@ function loadResources()
         button2Collision = scene.getObjectByName('COLLISION_button_02')
         button3Collision = scene.getObjectByName('COLLISION_button_03')
         player = scene.getObjectByName('Player')
+
         musicLocator = scene.getObjectByName('LOCATOR_music')
         zuckerbergLocator = scene.getObjectByName('LOCATOR_zuckerberg')
+        buterinLocator = scene.getObjectByName('LOCATOR_buterin')
+        baby1Locator = scene.getObjectByName('LOCATOR_baby_01')
+        baby2Locator = scene.getObjectByName('LOCATOR_baby_02')
+        baby3Locator = scene.getObjectByName('LOCATOR_baby_03')
+        baby4Locator = scene.getObjectByName('LOCATOR_baby_04')
+
         discoBall = scene.getObjectByName('MESH_discoball')
 
         physics.add.existing(levelCollision, { shape: 'concave', mass: 0 })
@@ -304,6 +413,23 @@ function loadResources()
 
         zuckerberg.position.copy(zuckerbergLocator.position)
         zuckerberg.rotation.copy(zuckerbergLocator.rotation)
+
+        buterin.position.copy(buterinLocator.position)
+        buterin.rotation.copy(buterinLocator.rotation)
+
+        baby1.position.copy(baby1Locator.position)
+
+        baby2.position.copy(baby2Locator.position)
+        baby2.rotation.copy(baby2Locator.rotation)
+        baby2.scale.set(1.2, 1.2, 1.2)
+
+        baby3.position.copy(baby3Locator.position)
+        baby3.rotation.copy(baby3Locator.rotation)
+        baby3.scale.set(1.2, 1.2, 1.2)
+
+        baby4.position.copy(baby4Locator.position)
+        baby4.rotation.copy(baby4Locator.rotation)
+        baby4.scale.set(1.2, 1.2, 1.2)
     }
 
     setupEvents()
@@ -587,6 +713,8 @@ function update()
         // Emissive material animation
         emissiveMaterial.emissiveMap.offset.x += delta / 15
 
+        bubblesMaterial.map.offset.y += delta / 15
+
         // Disco ball rotation
         discoBall.rotateY(THREE.MathUtils.degToRad(50) * delta)
 
@@ -623,15 +751,15 @@ function update()
                 }
                 if (intersected.name === 'COLLISION_button_01')
                 {
-                    interactText.innerHTML = 'PRESS BUTTON 1'
+                    interactText.innerHTML = 'QTY: 1'
                 }
                 if (intersected.name === 'COLLISION_button_02')
                 {
-                    interactText.innerHTML = 'PRESS BUTTON 2'
+                    interactText.innerHTML = 'QTY: 2'
                 }
                 if (intersected.name === 'COLLISION_button_03')
                 {
-                    interactText.innerHTML = 'PRESS BUTTON 3'
+                    interactText.innerHTML = 'QTY: 3'
                 }
             }
         }
@@ -664,12 +792,11 @@ function update()
         // Update animations
         mixer.update(delta)
         mixer1.update(delta)
+        mixer2.update(delta)
+        for (const mixer of mixers) mixer.update(delta)
     }
 
     renderer.render(scene, camera)
-    renderer.autoClear = false
-    renderer.render(scene1, camera)
-    renderer.autoClear = true
 }
 
 function onWindowResize()
@@ -678,6 +805,24 @@ function onWindowResize()
     camera.updateProjectionMatrix()
 
     renderer.setSize(window.innerWidth, window.innerHeight)
+}
+
+function traverseBaby(baby, probe)
+{
+    let mat = null
+
+    baby.traverse((child) =>
+    {
+        if(mat === null && child.material)
+        {
+            child.material.map.encoding = THREE.LinearEncoding
+            mat = child.material.clone()
+            mat.envMap = probe.texture
+
+            child.material = mat
+        }
+        child.layers.set(1)
+    })
 }
 
 function changeMaterialOffset()
