@@ -21,7 +21,7 @@ let canvas, blocker, audioElement, loaderPercent, loaderBar, interactText
 let levelCollision, doorCollision, cageCollision, laptopCollision, foxCollision, leverCollision, button1Collision, button2Collision, button3Collision
 let scene, camera, renderer, controls, mixer, mixer1, mixer2, listener, pmremGenerator, musicLocator, positionalAudio, audioContext, biquadFilter, cameraRaycaster, playerRaycaster
 let physics, clock, player, door, hiddenDoor, doorOpened = false, discoBall, doorHoverText = 'OPEN DOOR'
-let torchBillboards = [], torchMaterial, torchAnimator, fireplaceMaterial, fireplaceAnimator, emissiveMaterial, emissiveFloorMaterial, bubblesMaterial
+let torchBillboards = [], torchMaterial, torchAnimator, fireplaceMaterial, fireplaceAnimator, emissiveMaterial, emissiveFloorMaterial
 let zuckerberg, buterin, baby1, baby2, baby3, baby4
 let zuckerbergLocator, buterinLocator, baby1Locator, baby2Locator, baby3Locator, baby4Locator
 let reflectionProbe, reflectionProbe1, reflectionProbe2, reflectionProbe3
@@ -160,6 +160,16 @@ function loadResources()
         scene.animations = gltf.animations
         scene.traverse((child) =>
         {
+            if (child.material)
+            {
+                if (child.material.map !== null &&
+                    child.material.name !== 'MAT_emission' &&
+                    child.material.name !== 'MAT_floor')
+                {
+                    child.material.map.encoding = THREE.LinearEncoding
+                }
+            }
+
             if (!child.name.includes('COLLISION'))
             {
                 child.layers.set(1)
@@ -242,8 +252,6 @@ function loadResources()
 
     loadingManager.onLoad = () =>
     {
-        loaded = true
-
         gsap.to('#blocker', { backgroundColor: '#07070999', delay: 0.5, duration: 0.5 })
         gsap.fromTo('#loader', { autoAlpha: 1 }, { autoAlpha: 0, delay: 0.5, duration: 0.5 })
         gsap.fromTo('.instructions', { autoAlpha: 0 }, { autoAlpha: 1, delay: 0.5, duration: 0.5 })
@@ -258,31 +266,27 @@ function loadResources()
             traverseBaby(baby2, reflectionProbe1)
             traverseBaby(baby3, reflectionProbe)
             traverseBaby(baby4, reflectionProbe)
-            /*             if (child.name !== 'Player' || !child.name.includes('COLLISION'))
-                        {
-                            child.matrixAutoUpdate = false
-                        } */
 
             if (child.isMesh)
             {
                 if (child.material)
                 {
-                    if (child.material.name === 'MAT_default')
-                    {
-                        child.material.lightMap = lightmaps[1]
-                    }
-                    else if (child.material.name !== 'MAT_floor' && child.material.name !== 'MAT_glass')
+                    /*                     if (child.material.name === 'MAT_default')
+                                        {
+                                            child.material.lightMap = lightmaps[1]
+                                        }
+                                        else if (child.material.name !== 'MAT_floor' && child.material.name !== 'MAT_glass')
+                                        {
+                                            child.material.lightMap = lightmaps[0]
+                                        } */
+                    if (child.name.includes('_l1'))
                     {
                         child.material.lightMap = lightmaps[0]
                     }
-                    /*                 if (child.name.includes('_l1'))
-                                    {
-                                        child.material.lightMap = lightmaps[0]
-                                    }
-                                    else
-                                    {
-                                        child.material.lightMap = lightmaps[1]
-                                    } */
+                    else
+                    {
+                        child.material.lightMap = lightmaps[1]
+                    }
 
                     if (child.material.name === 'MAT_emission')
                     {
@@ -313,12 +317,6 @@ function loadResources()
                         })
                     }
 
-                    if (child.material.name === 'MAT_bubbles')
-                    {
-                        bubblesMaterial = child.material
-                        bubblesMaterial.lightMap = lightmaps[1]
-                    }
-
                     child.material.lightMapIntensity = 1.5
                 }
 
@@ -340,7 +338,7 @@ function loadResources()
         torchAnimator = new TextureAnimator(torchMaterial.emissiveMap, 6, 6, 36, 50)
         fireplaceAnimator = new TextureAnimator(fireplaceMaterial.emissiveMap, 8, 8, 64, 50)
 
-        door = scene.getObjectByName('MESH_door')
+        door = scene.getObjectByName('MESH_door_l1')
         levelCollision = scene.getObjectByName('COLLISION_level')
         doorCollision = scene.getObjectByName('COLLISION_door')
         cageCollision = scene.getObjectByName('COLLISION_cage')
@@ -430,6 +428,8 @@ function loadResources()
         baby4.position.copy(baby4Locator.position)
         baby4.rotation.copy(baby4Locator.rotation)
         baby4.scale.set(1.2, 1.2, 1.2)
+
+        loaded = true
     }
 
     setupEvents()
@@ -713,8 +713,6 @@ function update()
         // Emissive material animation
         emissiveMaterial.emissiveMap.offset.x += delta / 15
 
-        bubblesMaterial.map.offset.y += delta / 15
-
         // Disco ball rotation
         discoBall.rotateY(THREE.MathUtils.degToRad(50) * delta)
 
@@ -813,7 +811,7 @@ function traverseBaby(baby, probe)
 
     baby.traverse((child) =>
     {
-        if(mat === null && child.material)
+        if (mat === null && child.material)
         {
             child.material.map.encoding = THREE.LinearEncoding
             mat = child.material.clone()
