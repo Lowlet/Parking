@@ -6,9 +6,14 @@
     touch-action: none;
 }
 
+img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
 body {
     overflow: hidden;
-    font-family: "Jost", sans-serif;
+    font-family: "Times New Roman";
     font-size: 14px;
     font-weight: 400;
 }
@@ -60,11 +65,13 @@ body {
         margin: 0 10px 0 0;
         color: #070709;
         background-color: #cbcbcb;
+        font-family: "Jost", sans-serif;
         font-size: 14px;
         font-weight: 800;
         letter-spacing: 1px;
         text-align: center;
         border-radius: 4px;
+        line-height: 20px;
     }
 
     &__action {
@@ -78,27 +85,54 @@ body {
 
 .loader {
     position: absolute;
-    top: 80%;
+    top: 50%;
     width: 100%;
     height: auto;
 
     &__container {
-        max-width: 90vw;
+        max-width: 200px;
         margin: 0 auto;
     }
 
     &__percent {
-        color: #7f86a1;
+        color: #cbcbcb;
         text-align: center;
-        font-size: 14px;
+        font-size: 18px;
         font-weight: 800;
         letter-spacing: 2px;
         margin: 0 0 5px;
     }
 
     &__bar {
-        width: 0;
-        border: 1px dotted #7f86a1;
+        width: 0px;
+        height: 10px;
+        background-color: #cbcbcb;
+
+        &:before {
+            content: "";
+            position: absolute;
+            width: 199px;
+            height: 9px;
+            border: 1px solid #7f86a1;
+        }
+    }
+}
+
+.socials {
+    position: absolute;
+    bottom: 50px;
+    right: 50px;
+    display: flex;
+    align-items: center;
+
+    &__element {
+        width: 30px;
+        height: 30px;
+        margin: 0 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
     }
 }
 
@@ -135,3 +169,14 @@ body {
     color: #cbcbcb;
     letter-spacing: 2px;
 }
+
+.title-text {
+    position: absolute;
+    width: 100%;
+    top: 30px;
+    font-size: 100px;
+    font-weight: 900;
+    color: #cbcbcb;
+    text-align: center;
+}
+

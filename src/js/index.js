@@ -222,25 +222,48 @@ function loadResources()
     gltfLoader.load('./models/Baby.glb', (gltf) =>
     {
         baby1 = SkeletonUtils.clone(gltf.scene)
-        baby2 = SkeletonUtils.clone(gltf.scene)
-        baby3 = SkeletonUtils.clone(gltf.scene)
-        baby4 = SkeletonUtils.clone(gltf.scene)
 
         const mixer1 = new THREE.AnimationMixer(baby1)
-        const mixer2 = new THREE.AnimationMixer(baby2)
-        const mixer3 = new THREE.AnimationMixer(baby3)
-        const mixer4 = new THREE.AnimationMixer(baby4)
 
         const action = mixer1.clipAction(gltf.animations[2])
         action.timeScale = 0.25
         action.play()
 
-        mixer2.clipAction(gltf.animations[1]).play()
+        scene.add(baby1)
+        mixers.push(mixer1)
+    })
+
+    gltfLoader.load('./models/Baby_dj.glb', (gltf) =>
+    {
+        baby2 = SkeletonUtils.clone(gltf.scene)
+
+        const mixer2 = new THREE.AnimationMixer(baby2)
+        mixer2.clipAction(gltf.animations[0]).play()
+
+        scene.add(baby2)
+        mixers.push(mixer2)
+    })
+
+    gltfLoader.load('./models/Baby_dancer.glb', (gltf) =>
+    {
+        baby3 = SkeletonUtils.clone(gltf.scene)
+
+        const mixer3 = new THREE.AnimationMixer(baby3)
         mixer3.clipAction(gltf.animations[0]).play()
+
+        scene.add(baby3)
+        mixers.push(mixer3)
+    })
+
+    gltfLoader.load('./models/Baby_fbi.glb', (gltf) =>
+    {
+        baby4 = SkeletonUtils.clone(gltf.scene)
+
+        const mixer4 = new THREE.AnimationMixer(baby4)
         mixer4.clipAction(gltf.animations[0]).play()
 
-        scene.add(baby1, baby2, baby3, baby4)
-        mixers.push(mixer1, mixer2, mixer3, mixer4)
+        scene.add(baby4)
+        mixers.push(mixer4)
     })
 
     loadingManager.onProgress = (url, itemsLoaded, itemsTotal) =>
@@ -310,8 +333,22 @@ function loadResources()
                     {
                         child.material = new THREE.MeshPhysicalMaterial({
                             lightMap: lightmaps[1],
+                            specularIntensity: 1,
                             roughness: 0,
                             transmission: 1,
+                            thickness: 0.1,
+                            envMap: reflectionProbe2.texture
+                        })
+                    }
+
+                    if (child.material.name === 'MAT_glass_green')
+                    {
+                        child.material = new THREE.MeshPhysicalMaterial({
+                            lightMap: lightmaps[1],
+                            color: '#54B884',
+                            specularIntensity: 1,
+                            roughness: 0,
+                            transmission: 0.9,
                             thickness: 0.1,
                             envMap: reflectionProbe2.texture
                         })
@@ -427,7 +464,7 @@ function loadResources()
 
         baby4.position.copy(baby4Locator.position)
         baby4.rotation.copy(baby4Locator.rotation)
-        baby4.scale.set(1.2, 1.2, 1.2)
+        baby4.scale.set(0.45, 0.45, 0.45)
 
         loaded = true
     }
@@ -807,17 +844,19 @@ function onWindowResize()
 
 function traverseBaby(baby, probe)
 {
-    let mat = null
-
     baby.traverse((child) =>
     {
-        if (mat === null && child.material)
+        if (child.material)
         {
-            child.material.map.encoding = THREE.LinearEncoding
-            mat = child.material.clone()
-            mat.envMap = probe.texture
-
-            child.material = mat
+            if (child.material.map !== null)
+            {
+                child.material.map.encoding = THREE.LinearEncoding
+            }
+            child.material.envMap = probe.texture
+        }
+        if (child.isMesh)
+        {
+            child.frustumCulled = false
         }
         child.layers.set(1)
     })
