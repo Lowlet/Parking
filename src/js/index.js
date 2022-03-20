@@ -11,7 +11,6 @@ import { AmmoPhysics, PhysicsLoader } from '@enable3d/ammo-physics'
 
 import gsap from 'gsap'
 import nipplejs from 'nipplejs'
-import { Quaternion } from 'three'
 
 let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false
 let loaded = false
@@ -29,18 +28,22 @@ let zuckerbergLocator, buterinLocator, baby1Locator, baby2Locator, baby3Locator,
 let reflectionProbe, reflectionProbe1, reflectionProbe2, reflectionProbe3
 let velocity, playing = false
 let movevec = { x: 0, y: 0 }
-let lookvec = { x: 0, y: 0 }
-let cameraX = 0, cameraY = 0
+let inputRotationX = 0, inputRotationY = 0
+let cameraRotationX = 0, cameraRotationY = 0
+let displacement = new THREE.Vector3()
+
 
 let leftJoystick = nipplejs.create({
     zone: document.getElementById('leftjoystick'),
     mode: 'static',
+    threshold: 0.5,
     position: { left: '100px', bottom: '100px' }
 })
 
 let rightJoystick = nipplejs.create({
     zone: document.getElementById('rightjoystick'),
     mode: 'static',
+    threshold: 0.5,
     position: { right: '100px', bottom: '100px' }
 })
 
@@ -89,6 +92,8 @@ function init()
     camera.position.set(-5, 0.8, -31.5)
     camera.rotation.set(0, -Math.PI / 2, 0)
     camera.layers.enable(1)
+
+    //cameraRotationX = -Math.PI / 2
 
     controls = new PointerLockControls(camera, renderer.domElement)
 
@@ -641,35 +646,45 @@ function setupEvents()
 
     leftJoystick.on('move', (event, data) =>
     {
-        movevec.x = data.vector.x
-        movevec.y = data.vector.y
+/*      movevec.x = data.vector.x
+        movevec.y = data.vector.y */
+
+        displacement.set(data.vector.x, 0, -data.vector.y)
+
+        const angle = data.angle.radian
+        const force = data.force < 1 ? data.force : 1
+
+        //displacement.set(Math.cos(angle), 0, -Math.sin(angle)).multiplyScalar(force)
     })
 
     leftJoystick.on('end', () =>
     {
-        movevec.x = 0
-        movevec.y = 0
+/*         movevec.x = 0
+        movevec.y = 0 */
+
+        displacement.set(0, 0, 0)
     })
 
     rightJoystick.on('move', (event, data) =>
     {
         const angle = data.angle.radian
         const force = data.force < 1 ? data.force : 1
-        lookvec.x = -Math.cos(angle) * force * 0.05
-        lookvec.y = Math.sin(angle) * force * 0.05
+
+        inputRotationX = -Math.cos(angle) * force * 0.03
+        inputRotationY = Math.sin(angle) * force * 0.03
     })
 
     rightJoystick.on('end', () =>
     {
-        lookvec.x = 0
-        lookvec.y = 0
+        inputRotationX = 0
+        inputRotationY = 0
     })
 
     blocker.addEventListener('click', () =>
     {
         if (!loaded) return
 
-        if(isMobile)
+        if (isMobile)
         {
             playing = true
             gsap.fromTo('#blocker', { autoAlpha: 1 }, { autoAlpha: 0, duration: 0.2 })
@@ -714,63 +729,64 @@ function update()
         physics.update(delta * 1000)
         physics.updateDebugger()
 
-        if(isMobile)
+        if (isMobile)
         {
-            cameraX += lookvec.x
-            cameraY += lookvec.y
-            camera.rotation.set(cameraY, cameraX, 0)
-            //camera.rotation.x += lookvec.y
-            //camera.rotation.y += lookvec.x
+            cameraRotationX += inputRotationX
+            //cameraRotationY += inputRotationY
+
+            cameraRotationY = THREE.MathUtils.clamp(cameraRotationY, -Math.PI / 3, Math.PI / 3)
+
+            let xQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), cameraRotationX)
+            let yQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), cameraRotationY)
+            let xyQuaternion = new THREE.Quaternion().multiplyQuaternions(xQuaternion, yQuaternion)
+
+            camera.rotation.setFromQuaternion(xyQuaternion)
         }
+
+        const speed = isMobile ? 4 : 5
 
         // Rotate player
-        const cameraDirection = new THREE.Vector3()
-        const rotation = camera.getWorldDirection(cameraDirection)
-        const theta = Math.atan2(rotation.x, rotation.z)
+        const direction = new THREE.Vector3()
+        camera.getWorldDirection(direction)
+        const rr = direction.multiply(displacement)
 
-        const rotationPlayer = player.getWorldDirection(cameraDirection)
-        const thetaPlayer = Math.atan2(rotationPlayer.x, rotationPlayer.z)
-        player.body.setAngularVelocityY(0)
+        //const v = displacement.transformDirection(camera.matrixWorld)
+        //console.log(displacement)
 
-        const l = Math.abs(theta - thetaPlayer)
-        const d = Math.PI / 24
+        //const theta = Math.atan2(direction.x, direction.z)
 
-        let rotationSpeed = /* isMobile ? 2 :  */10
 
-        if (l > d)
-        {
-            if (l > Math.PI - d) rotationSpeed *= -1
-            if (theta < thetaPlayer) rotationSpeed *= -1
-
-            player.body.setAngularVelocityY(rotationSpeed)
-        }
-
-        // Move player
-        const speed = isMobile ? 3.5 : 5
-
+/* 
         let x = 0, z = 0
 
-        if (moveForward)
-        {
-            x += Math.sin(theta) * speed
-            z += Math.cos(theta) * speed
-        }
-        else if (moveBackward)
-        {
-            x -= Math.sin(theta) * speed
-            z -= Math.cos(theta) * speed
-        }
+        x = Math.sin(theta)
+        z = Math.cos(theta) */
 
-        if (moveLeft)
-        {
-            x += Math.sin(theta + Math.PI * 0.5) * speed
-            z += Math.cos(theta + Math.PI * 0.5) * speed
-        }
-        else if (moveRight)
-        {
-            x += Math.sin(theta - Math.PI * 0.5) * speed
-            z += Math.cos(theta - Math.PI * 0.5) * speed
-        }
+        //console.log(x + '||' + z)
+
+        /*         if (moveForward)
+                {
+                    x += Math.sin(theta) * speed
+                    z += Math.cos(theta) * speed
+                }
+                else if (moveBackward)
+                {
+                    x -= Math.sin(theta) * speed
+                    z -= Math.cos(theta) * speed
+                }
+        
+                if (moveLeft)
+                {
+                    x += Math.sin(theta + Math.PI * 0.5) * speed
+                    z += Math.cos(theta + Math.PI * 0.5) * speed
+                }
+                else if (moveRight)
+                {
+                    x += Math.sin(theta - Math.PI * 0.5) * speed
+                    z += Math.cos(theta - Math.PI * 0.5) * speed
+                } */
+
+        //console.log(displacement.x + '||' + displacement.z)
 
         if (!isMobile)
         {
@@ -778,7 +794,9 @@ function update()
         }
         else
         {
-            velocity = new THREE.Vector3(movevec.y * speed, player.body.velocity.y, movevec.x * speed)
+            velocity = direction.multiplyScalar(speed)
+
+            //velocity = v.multiplyScalar(speed)
         }
 
         // Raycast down from player position
