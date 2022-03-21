@@ -3,7 +3,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
-import { PositionalAudioHelper } from 'three/examples/jsm/helpers/PositionalAudioHelper.js'
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 
@@ -27,23 +26,21 @@ let zuckerberg, buterin, baby1, baby2, baby3, baby4
 let zuckerbergLocator, buterinLocator, baby1Locator, baby2Locator, baby3Locator, baby4Locator
 let reflectionProbe, reflectionProbe1, reflectionProbe2, reflectionProbe3
 let velocity, playing = false
-let movevec = { x: 0, y: 0 }
 let inputRotationX = 0, inputRotationY = 0
 let cameraRotationX = 0, cameraRotationY = 0
 let displacement = new THREE.Vector3()
+let angle = null, force = 0
 
 
 let leftJoystick = nipplejs.create({
     zone: document.getElementById('leftjoystick'),
     mode: 'static',
-    threshold: 0.5,
     position: { left: '100px', bottom: '100px' }
 })
 
 let rightJoystick = nipplejs.create({
     zone: document.getElementById('rightjoystick'),
     mode: 'static',
-    threshold: 0.5,
     position: { right: '100px', bottom: '100px' }
 })
 
@@ -93,7 +90,7 @@ function init()
     camera.rotation.set(0, -Math.PI / 2, 0)
     camera.layers.enable(1)
 
-    //cameraRotationX = -Math.PI / 2
+    cameraRotationX = -Math.PI / 2
 
     controls = new PointerLockControls(camera, renderer.domElement)
 
@@ -122,21 +119,20 @@ function init()
     pmremGenerator = new THREE.PMREMGenerator(renderer)
     pmremGenerator.compileEquirectangularShader()
 
-    //const helper = new PositionalAudioHelper(positionalAudio, 10)
-    //positionalAudio.add(helper)
-
     loadResources()
 }
 
 function loadResources()
 {
     const loadingManager = new THREE.LoadingManager()
-    const dracoLoader = new DRACOLoader()
-    dracoLoader.setDecoderConfig({ type: 'js' })
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/')
     const rgbeLoader = new RGBELoader(loadingManager)
     const exrLoader = new EXRLoader(loadingManager)
     const gltfLoader = new GLTFLoader(loadingManager)
+    const dracoLoader = new DRACOLoader()
+
+    dracoLoader.setDecoderConfig({ type: 'js' })
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/')
+    gltfLoader.setDRACOLoader(dracoLoader)
 
     rgbeLoader.load('./images/1_final.hdr', (texture) =>
     {
@@ -182,7 +178,6 @@ function loadResources()
         pmremGenerator.dispose()
     })
 
-    gltfLoader.setDRACOLoader(dracoLoader)
     gltfLoader.load('./models/Parking.glb', (gltf) =>
     {
         scene.add(gltf.scene)
@@ -497,99 +492,12 @@ function setupEvents()
 {
     canvas.addEventListener('click', () =>
     {
-        if (!loaded) return
+        interact()
+    })
 
-        if (intersected && intersected.name === 'COLLISION_door')
-        {
-            scene.animations.forEach((animation) =>
-            {
-                if (animation.name === 'ANIM_door')
-                {
-                    const action = mixer.clipAction(animation)
-                    action.clampWhenFinished = true
-                    action.setLoop(THREE.LoopOnce)
-                    action.setDuration(1)
-
-                    if (doorOpened)
-                    {
-                        action.timeScale *= -1
-
-                        if (player.position.x < 12.2)
-                        {
-                            biquadFilter.frequency.setValueAtTime(biquadFilter.frequency.value, audioContext.currentTime)
-                            biquadFilter.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 1)
-                        }
-                        interactText.innerHTML = doorHoverText = 'OPEN DOOR'
-                    }
-                    else
-                    {
-                        biquadFilter.frequency.setValueAtTime(biquadFilter.frequency.value, audioContext.currentTime)
-                        biquadFilter.frequency.exponentialRampToValueAtTime(24000, audioContext.currentTime + 1)
-                        interactText.innerHTML = doorHoverText = 'CLOSE DOOR'
-                    }
-
-                    action.paused = false
-                    action.play()
-
-                    doorOpened = !doorOpened
-                }
-            })
-        }
-
-        if (intersected && intersected.name === 'COLLISION_lever')
-        {
-            scene.animations.forEach((animation) =>
-            {
-                if (animation.name === 'ANIM_lever')
-                {
-                    const action = mixer.clipAction(animation)
-                    action.clampWhenFinished = true
-                    action.setLoop(THREE.LoopOnce)
-                    action.play()
-                }
-
-                if (animation.name === 'ANIM_hiddenDoor')
-                {
-                    const action = mixer.clipAction(animation)
-                    action.clampWhenFinished = true
-                    action.setLoop(THREE.LoopOnce)
-                    action.play()
-                }
-            })
-        }
-
-        if (intersected && intersected.name === 'COLLISION_cage')
-        {
-            window.open('https://www.twitter.com')
-        }
-
-        if (intersected && intersected.name === 'COLLISION_laptop')
-        {
-            window.open('https://www.discord.com')
-        }
-
-        if (intersected && intersected.name === 'COLLISION_fox')
-        {
-            // Fox onclick logic
-        }
-
-        if (intersected && intersected === button1Collision)
-        {
-            playButtonAnimation('ANIM_button_01')
-            // Button1 onclick logic
-        }
-
-        if (intersected && intersected === button2Collision)
-        {
-            playButtonAnimation('ANIM_button_02')
-            // Button2 onclick logic
-        }
-
-        if (intersected && intersected === button3Collision)
-        {
-            playButtonAnimation('ANIM_button_03')
-            // Button3 onclick logic
-        }
+    canvas.addEventListener('ontouchstart', () =>
+    {
+        interact()
     })
 
     document.addEventListener('keydown', (event) =>
@@ -646,23 +554,13 @@ function setupEvents()
 
     leftJoystick.on('move', (event, data) =>
     {
-/*      movevec.x = data.vector.x
-        movevec.y = data.vector.y */
-
-        displacement.set(data.vector.x, 0, -data.vector.y)
-
-        const angle = data.angle.radian
-        const force = data.force < 1 ? data.force : 1
-
-        //displacement.set(Math.cos(angle), 0, -Math.sin(angle)).multiplyScalar(force)
+        angle = data.angle.radian
+        force = data.force < 1 ? data.force : 1
     })
 
     leftJoystick.on('end', () =>
     {
-/*         movevec.x = 0
-        movevec.y = 0 */
-
-        displacement.set(0, 0, 0)
+        angle = null
     })
 
     rightJoystick.on('move', (event, data) =>
@@ -729,10 +627,54 @@ function update()
         physics.update(delta * 1000)
         physics.updateDebugger()
 
-        if (isMobile)
+        const speed = 5
+
+        if (angle !== null)
         {
+            displacement.set(Math.cos(angle), 0, -Math.sin(angle)).multiplyScalar(force)
+        }
+        else
+        {
+            displacement.set(0, 0, 0)
+        }
+
+        if (!isMobile)
+        {
+            let x = 0, z = 0
+
+            const cameraDirection = new THREE.Vector3()
+            camera.getWorldDirection(cameraDirection)
+            const theta = Math.atan2(cameraDirection.x, cameraDirection.z)
+
+            if (moveForward)
+            {
+                x += Math.sin(theta) * speed
+                z += Math.cos(theta) * speed
+            }
+            else if (moveBackward)
+            {
+                x -= Math.sin(theta) * speed
+                z -= Math.cos(theta) * speed
+            }
+
+            if (moveLeft)
+            {
+                x += Math.sin(theta + Math.PI * 0.5) * speed
+                z += Math.cos(theta + Math.PI * 0.5) * speed
+            }
+            else if (moveRight)
+            {
+                x += Math.sin(theta - Math.PI * 0.5) * speed
+                z += Math.cos(theta - Math.PI * 0.5) * speed
+            }
+
+            velocity = new THREE.Vector3(x, player.body.velocity.y, z)
+        }
+        else
+        {
+            // Rotate camera with virtual joystick
             cameraRotationX += inputRotationX
-            //cameraRotationY += inputRotationY
+            cameraRotationY += inputRotationY
 
             cameraRotationY = THREE.MathUtils.clamp(cameraRotationY, -Math.PI / 3, Math.PI / 3)
 
@@ -741,62 +683,11 @@ function update()
             let xyQuaternion = new THREE.Quaternion().multiplyQuaternions(xQuaternion, yQuaternion)
 
             camera.rotation.setFromQuaternion(xyQuaternion)
-        }
 
-        const speed = isMobile ? 4 : 5
+            // Move character with virtual joystick in direction of camera
+            const direction = displacement.transformDirection(camera.matrixWorld).multiplyScalar(speed)
 
-        // Rotate player
-        const direction = new THREE.Vector3()
-        camera.getWorldDirection(direction)
-        const rr = direction.multiply(displacement)
-
-        //const v = displacement.transformDirection(camera.matrixWorld)
-        //console.log(displacement)
-
-        //const theta = Math.atan2(direction.x, direction.z)
-
-
-/* 
-        let x = 0, z = 0
-
-        x = Math.sin(theta)
-        z = Math.cos(theta) */
-
-        //console.log(x + '||' + z)
-
-        /*         if (moveForward)
-                {
-                    x += Math.sin(theta) * speed
-                    z += Math.cos(theta) * speed
-                }
-                else if (moveBackward)
-                {
-                    x -= Math.sin(theta) * speed
-                    z -= Math.cos(theta) * speed
-                }
-        
-                if (moveLeft)
-                {
-                    x += Math.sin(theta + Math.PI * 0.5) * speed
-                    z += Math.cos(theta + Math.PI * 0.5) * speed
-                }
-                else if (moveRight)
-                {
-                    x += Math.sin(theta - Math.PI * 0.5) * speed
-                    z += Math.cos(theta - Math.PI * 0.5) * speed
-                } */
-
-        //console.log(displacement.x + '||' + displacement.z)
-
-        if (!isMobile)
-        {
-            velocity = new THREE.Vector3(x, player.body.velocity.y, z)
-        }
-        else
-        {
-            velocity = direction.multiplyScalar(speed)
-
-            //velocity = v.multiplyScalar(speed)
+            velocity = new THREE.Vector3(direction.x, player.body.velocity.y, direction.z)
         }
 
         // Raycast down from player position
@@ -920,6 +811,103 @@ function update()
     }
 
     renderer.render(scene, camera)
+}
+
+function interact()
+{
+    if (!loaded) return
+
+    if (intersected && intersected.name === 'COLLISION_door')
+    {
+        scene.animations.forEach((animation) =>
+        {
+            if (animation.name === 'ANIM_door')
+            {
+                const action = mixer.clipAction(animation)
+                action.clampWhenFinished = true
+                action.setLoop(THREE.LoopOnce)
+                action.setDuration(1)
+
+                if (doorOpened)
+                {
+                    action.timeScale *= -1
+
+                    if (player.position.x < 12.2)
+                    {
+                        biquadFilter.frequency.setValueAtTime(biquadFilter.frequency.value, audioContext.currentTime)
+                        biquadFilter.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 1)
+                    }
+                    interactText.innerHTML = doorHoverText = 'OPEN DOOR'
+                }
+                else
+                {
+                    biquadFilter.frequency.setValueAtTime(biquadFilter.frequency.value, audioContext.currentTime)
+                    biquadFilter.frequency.exponentialRampToValueAtTime(24000, audioContext.currentTime + 1)
+                    interactText.innerHTML = doorHoverText = 'CLOSE DOOR'
+                }
+
+                action.paused = false
+                action.play()
+
+                doorOpened = !doorOpened
+            }
+        })
+    }
+
+    if (intersected && intersected.name === 'COLLISION_lever')
+    {
+        scene.animations.forEach((animation) =>
+        {
+            if (animation.name === 'ANIM_lever')
+            {
+                const action = mixer.clipAction(animation)
+                action.clampWhenFinished = true
+                action.setLoop(THREE.LoopOnce)
+                action.play()
+            }
+
+            if (animation.name === 'ANIM_hiddenDoor')
+            {
+                const action = mixer.clipAction(animation)
+                action.clampWhenFinished = true
+                action.setLoop(THREE.LoopOnce)
+                action.play()
+            }
+        })
+    }
+
+    if (intersected && intersected.name === 'COLLISION_cage')
+    {
+        window.open('https://www.twitter.com')
+    }
+
+    if (intersected && intersected.name === 'COLLISION_laptop')
+    {
+        window.open('https://www.discord.com')
+    }
+
+    if (intersected && intersected.name === 'COLLISION_fox')
+    {
+        // Fox onclick logic
+    }
+
+    if (intersected && intersected === button1Collision)
+    {
+        playButtonAnimation('ANIM_button_01')
+        // Button1 onclick logic
+    }
+
+    if (intersected && intersected === button2Collision)
+    {
+        playButtonAnimation('ANIM_button_02')
+        // Button2 onclick logic
+    }
+
+    if (intersected && intersected === button3Collision)
+    {
+        playButtonAnimation('ANIM_button_03')
+        // Button3 onclick logic
+    }
 }
 
 function onWindowResize()

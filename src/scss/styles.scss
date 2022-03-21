@@ -3,12 +3,13 @@
 * {
     margin: 0;
     user-select: none;
-    touch-action: none;
+    touch-action: pan-y;
 }
 
 img {
     max-width: 100%;
     max-height: 100%;
+    -webkit-user-drag: none;
 }
 
 body {
@@ -34,9 +35,12 @@ body {
     justify-content: center;
     align-items: center;
     backdrop-filter: blur(50px);
+    z-index: 1000;
 }
 
 .instructions {
+    position: absolute;
+    top: 52%;
     opacity: 0;
 
     &__title {
@@ -52,7 +56,7 @@ body {
     position: absolute;
     width: 100%;
     max-width: 500px;
-    bottom: 60px;
+    bottom: 50px;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -93,6 +97,7 @@ body {
     top: 50%;
     width: 100%;
     height: auto;
+    z-index: 1001;
 
     &__container {
         max-width: 200px;
@@ -103,9 +108,7 @@ body {
         color: #cbcbcb;
         text-align: center;
         font-size: 18px;
-        font-weight: 800;
-        letter-spacing: 2px;
-        margin: 0 0 5px;
+        font-weight: 600;
     }
 
     &__bar {
@@ -127,13 +130,14 @@ body {
     position: absolute;
     bottom: 50px;
     right: 50px;
+    height: 23px;
     display: flex;
     align-items: center;
 
     &__element {
         width: 30px;
         height: 30px;
-        margin: 0 10px;
+        margin: 0 15px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -148,6 +152,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    pointer-events: none;
 }
 
 .dot {
@@ -155,7 +160,6 @@ body {
     width: 2px;
     background-color: #cbcbcb;
     border: 1px solid #cbcbcb;
-    border-radius: 50%;
 }
 
 .interact__container {
@@ -166,6 +170,7 @@ body {
     justify-content: center;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
 }
 
 .interact__text {
@@ -176,25 +181,54 @@ body {
     font-weight: 800;
 }
 
-.title-text {
+.title_logo {
     position: absolute;
-    width: 100%;
-    top: 30px;
-    font-family: "Times New Roman";
-    font-size: 100px;
-    font-weight: 400;
-    color: #cbcbcb;
-    text-align: center;
+    width: 400px;
+    top: 0px;
+    margin-top: 100px;
 }
 
 .back {
     width: 96px !important;
     height: 96px !important;
-    background: radial-gradient(rgba(218, 225, 230, 0.25) 10%, rgba(218, 225, 230, 0.50) 95%) !important;
+    background: radial-gradient(rgba(218, 225, 230, 0.25) 10%, rgba(218, 225, 230, 0.5) 95%) !important;
     border: 2px solid rgba(218, 225, 230, 0.25) !important;
+    opacity: 1 !important;
 }
 
 .front {
-    background: radial-gradient(rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.75) 100%) !important;
+    background: radial-gradient(rgba(229, 231, 236, 0.5) 0%, rgba(228, 230, 235, 0.75) 100%) !important;
+    opacity: 1 !important;
 }
 
+@media (hover: hover) {
+    .joystick__container {
+        visibility: hidden;
+        pointer-events: none;
+    }
+}
+
+@media (hover: none) {
+    .keymapping {
+        visibility: hidden !important;
+    }
+
+    .socials {
+        bottom: 30px;
+        right: inherit;
+    }
+
+    .title_logo {
+        width: 300px;
+        margin-top: 60px;
+    }
+}
+
+@media (hover: none) and (orientation: landscape) {
+    .title_logo {
+        margin-top: 30px;
+    }
+}
+
+@media (max-width: 900px) {
+}
