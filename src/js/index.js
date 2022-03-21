@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
+import { TextureLoader } from 'three/src/loaders/TextureLoader.js'
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 
@@ -17,7 +18,7 @@ let lightmaps = []
 let mixers = []
 let intersected
 
-let canvas, blocker, audioElement, loaderPercent, loaderBar, interactText
+let canvas, blocker, audioElement, loaderPercent, loaderBar, interactText, menuButton
 let levelCollision, doorCollision, cageCollision, laptopCollision, foxCollision, leverCollision, button1Collision, button2Collision, button3Collision
 let scene, camera, renderer, controls, mixer, mixer1, mixer2, listener, pmremGenerator, musicLocator, positionalAudio, audioContext, biquadFilter, cameraRaycaster, playerRaycaster
 let physics, clock, player, door, hiddenDoor, doorOpened = false, discoBall, doorHoverText = 'OPEN DOOR'
@@ -68,6 +69,7 @@ function init()
     loaderPercent = document.getElementById('loader__percent')
     loaderBar = document.getElementById('loader__bar')
     interactText = document.getElementById('interact__text')
+    menuButton = document.getElementById('menu-button')
 
     clock = new THREE.Clock()
 
@@ -129,26 +131,27 @@ function loadResources()
     const exrLoader = new EXRLoader(loadingManager)
     const gltfLoader = new GLTFLoader(loadingManager)
     const dracoLoader = new DRACOLoader()
+    const textureLoader = new TextureLoader(loadingManager)
 
     dracoLoader.setDecoderConfig({ type: 'js' })
     dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/')
     gltfLoader.setDRACOLoader(dracoLoader)
 
-    rgbeLoader.load('./images/1_final.hdr', (texture) =>
+    rgbeLoader.load('./images/TEX_lightmap_outside.hdr', (texture) =>
     {
         texture.flipY = false
 
         lightmaps[0] = texture
     })
 
-    rgbeLoader.load('./images/2_final.hdr', (texture) =>
+    rgbeLoader.load('./images/TEX_lightmap_inside.hdr', (texture) =>
     {
         texture.flipY = false
 
         lightmaps[1] = texture
     })
 
-    exrLoader.load('./images/kloppenheim_02_4k.exr', (texture) =>
+    exrLoader.load('./images/sky.exr', (texture) =>
     {
         texture.mapping = THREE.EquirectangularReflectionMapping
         scene.background = texture
@@ -493,6 +496,13 @@ function setupEvents()
     canvas.addEventListener('click', () =>
     {
         interact()
+    })
+
+    menuButton.addEventListener('click', () =>
+    {
+        playing = false
+        gsap.fromTo('#blocker', { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 })
+        listener.context.suspend()
     })
 
     canvas.addEventListener('ontouchstart', () =>
