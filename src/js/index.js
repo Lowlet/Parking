@@ -1,9 +1,11 @@
 import * as THREE from 'three'
+import { REVISION } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
-import { TextureLoader } from 'three/src/loaders/TextureLoader.js'
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 
@@ -11,6 +13,8 @@ import { AmmoPhysics, PhysicsLoader } from '@enable3d/ammo-physics'
 
 import gsap from 'gsap'
 import nipplejs from 'nipplejs'
+
+const THREE_PATH = `https://unpkg.com/three@0.${REVISION}.x`
 
 let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false
 let loaded = false
@@ -129,13 +133,18 @@ function loadResources()
     const loadingManager = new THREE.LoadingManager()
     const rgbeLoader = new RGBELoader(loadingManager)
     const exrLoader = new EXRLoader(loadingManager)
+    const dracoLoader = new DRACOLoader(loadingManager)
+    const ktx2Loader = new KTX2Loader(loadingManager)
     const gltfLoader = new GLTFLoader(loadingManager)
-    const dracoLoader = new DRACOLoader()
-    const textureLoader = new TextureLoader(loadingManager)
 
-    dracoLoader.setDecoderConfig({ type: 'js' })
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/')
+    dracoLoader.setDecoderPath(`${THREE_PATH}/examples/js/libs/draco/gltf/`)
+
+    //ktx2Loader.setTranscoderPath(`${THREE_PATH}/examples/js/libs/basis/`)
+    //ktx2Loader.detectSupport(renderer)
+
     gltfLoader.setDRACOLoader(dracoLoader)
+    //gltfLoader.setMeshoptDecoder(MeshoptDecoder)
+    //gltfLoader.setKTX2Loader(ktx2Loader)
 
     rgbeLoader.load('./images/TEX_lightmap_outside.hdr', (texture) =>
     {
@@ -180,6 +189,23 @@ function loadResources()
         reflectionProbe3 = pmremGenerator.fromEquirectangular(texture)
         pmremGenerator.dispose()
     })
+
+/*     gltfLoader.load('./models/Parking_static.glb', (gltf) =>
+    {
+        scene.add(gltf.scene)
+        scene.traverse((child) =>
+        {
+            if (child.material)
+            {
+                if (child.material.map !== null &&
+                    child.material.name !== 'MAT_emission')
+                {
+                    child.material.map.encoding = THREE.LinearEncoding
+                }
+            }
+        })
+        console.log(scene)
+    }) */
 
     gltfLoader.load('./models/Parking.glb', (gltf) =>
     {
