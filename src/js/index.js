@@ -2,15 +2,10 @@ import * as THREE from 'three'
 import { REVISION } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
-import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader'
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader'
-import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
-
 import { AmmoPhysics, PhysicsLoader } from '@enable3d/ammo-physics'
-
 import gsap from 'gsap'
 import nipplejs from 'nipplejs'
 
@@ -25,8 +20,8 @@ let intersected
 let canvas, blocker, audioElement, loaderPercent, loaderBar, interactText, menuButton
 let levelCollision, doorCollision, cageCollision, laptopCollision, foxCollision, leverCollision, button1Collision, button2Collision, button3Collision
 let scene, camera, renderer, controls, mixer, mixer1, mixer2, listener, pmremGenerator, musicLocator, positionalAudio, audioContext, biquadFilter, cameraRaycaster, playerRaycaster
-let physics, clock, player, door, hiddenDoor, doorOpened = false, discoBall, doorHoverText = 'OPEN DOOR'
-let torchBillboards = [], torchMaterial, torchAnimator, fireplaceMaterial, fireplaceAnimator, emissiveMaterial, emissiveFloorMaterial
+let physics, clock, player, door, hiddenDoor, doorOpened = false, discoBall, doorHoverText = 'OPEN DOOR', walletConnected = false
+let torchBillboards = [], torchMaterial, torchAnimator, fireplaceMaterial, fireplaceAnimator, emissiveMaterial, emissiveFloorMaterial, lightMaterial
 let zuckerberg, buterin, baby1, baby2, baby3, baby4
 let zuckerbergLocator, buterinLocator, baby1Locator, baby2Locator, baby3Locator, baby4Locator
 let reflectionProbe, reflectionProbe1, reflectionProbe2, reflectionProbe3
@@ -131,32 +126,23 @@ function init()
 function loadResources()
 {
     const loadingManager = new THREE.LoadingManager()
-    const rgbeLoader = new RGBELoader(loadingManager)
     const exrLoader = new EXRLoader(loadingManager)
     const dracoLoader = new DRACOLoader(loadingManager)
-    const ktx2Loader = new KTX2Loader(loadingManager)
     const gltfLoader = new GLTFLoader(loadingManager)
 
     dracoLoader.setDecoderPath(`${THREE_PATH}/examples/js/libs/draco/gltf/`)
 
-    //ktx2Loader.setTranscoderPath(`${THREE_PATH}/examples/js/libs/basis/`)
-    //ktx2Loader.detectSupport(renderer)
-
     gltfLoader.setDRACOLoader(dracoLoader)
-    //gltfLoader.setMeshoptDecoder(MeshoptDecoder)
-    //gltfLoader.setKTX2Loader(ktx2Loader)
 
-    rgbeLoader.load('./images/TEX_lightmap_outside.hdr', (texture) =>
+    exrLoader.load('./images/TEX_lightmap_outside.exr', (texture) =>
     {
-        texture.flipY = false
-
+        texture.flipY = true
         lightmaps[0] = texture
     })
 
-    rgbeLoader.load('./images/TEX_lightmap_inside.hdr', (texture) =>
+    exrLoader.load('./images/TEX_lightmap_inside.exr', (texture) =>
     {
-        texture.flipY = false
-
+        texture.flipY = true
         lightmaps[1] = texture
     })
 
@@ -189,23 +175,6 @@ function loadResources()
         reflectionProbe3 = pmremGenerator.fromEquirectangular(texture)
         pmremGenerator.dispose()
     })
-
-/*     gltfLoader.load('./models/Parking_static.glb', (gltf) =>
-    {
-        scene.add(gltf.scene)
-        scene.traverse((child) =>
-        {
-            if (child.material)
-            {
-                if (child.material.map !== null &&
-                    child.material.name !== 'MAT_emission')
-                {
-                    child.material.map.encoding = THREE.LinearEncoding
-                }
-            }
-        })
-        console.log(scene)
-    }) */
 
     gltfLoader.load('./models/Parking.glb', (gltf) =>
     {
@@ -241,6 +210,7 @@ function loadResources()
                 child.frustumCulled = false
                 child.material.map.encoding = THREE.LinearEncoding
                 child.material.envMap = reflectionProbe3.texture
+                child.material.envMapIntensity = 1.5
             }
             child.layers.set(1)
         })
@@ -360,6 +330,12 @@ function loadResources()
                     {
                         emissiveMaterial = child.material
                         emissiveMaterial.emissiveIntensity = 2
+                    }
+
+                    if (child.material.name === 'MAT_emission_02')
+                    {
+                        lightMaterial = child.material
+                        lightMaterial.emissiveIntensity = 2
                     }
 
                     if (child.material.name === 'MAT_floor')
@@ -892,6 +868,8 @@ function interact()
 
     if (intersected && intersected.name === 'COLLISION_lever')
     {
+        if(!walletConnected) return
+
         scene.animations.forEach((animation) =>
         {
             if (animation.name === 'ANIM_lever')
@@ -924,7 +902,7 @@ function interact()
 
     if (intersected && intersected.name === 'COLLISION_fox')
     {
-        // Fox onclick logic
+        // Connect wallet logic
     }
 
     if (intersected && intersected === button1Collision)
@@ -980,6 +958,12 @@ function changeMaterialOffset()
     emissiveFloorMaterial.emissiveMap.offset.y += 3 / 8
 
     setTimeout(() => changeMaterialOffset(), 400)
+}
+
+function connectWallet()
+{
+    lightMaterial.emissiveMap.offset.x += 0.5
+    walletConnected = true
 }
 
 function playButtonAnimation(button)
