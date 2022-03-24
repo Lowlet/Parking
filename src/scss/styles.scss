@@ -1,10 +1,18 @@
-@import url("https://fonts.googleapis.com/css2?family=Jost:wght@100..900&display=swap");
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@font-face {
+    font-family: "MSSansSerif";
+    src: url("../fonts/ms-sans-serif.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "MSSansSerifBold";
+    src: url("../fonts/ms-sans-serif-bold.ttf") format("truetype");
+}
 
 * {
     margin: 0;
     user-select: none;
     touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
 }
 
 img {
@@ -15,7 +23,7 @@ img {
 
 body {
     overflow: hidden;
-    font-family: "Jost", sans-serif;
+    font-family: "MSSansSerifBold", sans-serif;
     font-size: 14px;
     font-weight: 400;
 }
@@ -86,6 +94,7 @@ body {
 
     &__action {
         color: #7f86a1;
+        font-family: "MSSansSerif", sans-serif;
         font-size: 16px;
         font-weight: 400;
         letter-spacing: 2px;
@@ -108,9 +117,7 @@ body {
     &__percent {
         color: #cbcbcb;
         text-align: center;
-        font-family: 'Press Start 2P', cursive;
-        font-size: 18px;
-        font-weight: 400;
+        font-size: 24px;
         margin-bottom: 5px;
     }
 
@@ -126,6 +133,14 @@ body {
             height: 9px;
             border: 1px solid #7f86a1;
         }
+    }
+
+    &__text {
+        color: #cbcbcb;
+        text-align: center;
+        font-family: "MSSansSerif", sans-serif;
+        font-size: 20px;
+        margin-top: 20px;
     }
 }
 
@@ -181,7 +196,7 @@ body {
     top: 55vh;
     color: #cbcbcb;
     letter-spacing: 4px;
-    font-weight: 800;
+    font-size: 18px;
 }
 
 .title_logo {
@@ -219,7 +234,7 @@ body {
     }
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
     .joystick__container {
         visibility: hidden;
         pointer-events: none;

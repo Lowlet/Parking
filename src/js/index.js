@@ -3,6 +3,7 @@ import { REVISION } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader'
+import { TextureLoader } from 'three/src/loaders/TextureLoader'
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { AmmoPhysics, PhysicsLoader } from '@enable3d/ammo-physics'
@@ -20,7 +21,7 @@ let intersected
 let canvas, blocker, audioElement, loaderPercent, loaderBar, interactText, menuButton
 let levelCollision, doorCollision, cageCollision, laptopCollision, foxCollision, leverCollision, button1Collision, button2Collision, button3Collision
 let scene, camera, renderer, controls, mixer, mixer1, mixer2, listener, pmremGenerator, musicLocator, positionalAudio, audioContext, biquadFilter, cameraRaycaster, playerRaycaster
-let physics, clock, player, door, hiddenDoor, doorOpened = false, discoBall, doorHoverText = 'OPEN DOOR', walletConnected = false
+let physics, clock, player, door, hiddenDoor, doorOpened = false, discoBall, doorHoverText = 'OPEN DOOR', walletConnected = true
 let torchBillboards = [], torchMaterial, torchAnimator, fireplaceMaterial, fireplaceAnimator, emissiveMaterial, emissiveFloorMaterial, lightMaterial
 let zuckerberg, buterin, baby1, baby2, baby3, baby4
 let zuckerbergLocator, buterinLocator, baby1Locator, baby2Locator, baby3Locator, baby4Locator
@@ -129,20 +130,21 @@ function loadResources()
     const exrLoader = new EXRLoader(loadingManager)
     const dracoLoader = new DRACOLoader(loadingManager)
     const gltfLoader = new GLTFLoader(loadingManager)
+    const textureLoader = new TextureLoader(loadingManager)
 
     dracoLoader.setDecoderPath(`${THREE_PATH}/examples/js/libs/draco/gltf/`)
 
     gltfLoader.setDRACOLoader(dracoLoader)
 
-    exrLoader.load('./images/TEX_lightmap_outside.exr', (texture) =>
+    textureLoader.load('./images/TEX_lightmap_outside.webp', (texture) =>
     {
-        texture.flipY = true
+        texture.flipY = false
         lightmaps[0] = texture
     })
 
-    exrLoader.load('./images/TEX_lightmap_inside.exr', (texture) =>
+    textureLoader.load('./images/TEX_lightmap_inside.webp', (texture) =>
     {
-        texture.flipY = true
+        texture.flipY = false
         lightmaps[1] = texture
     })
 
