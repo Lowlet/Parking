@@ -3,7 +3,7 @@ import { REVISION } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader'
-import { TextureLoader } from 'three/src/loaders/TextureLoader'
+//import { TextureLoader } from 'three/src/loaders/TextureLoader'
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 import { AmmoPhysics, PhysicsLoader } from '@enable3d/ammo-physics'
@@ -52,8 +52,6 @@ if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elain
 {
     isMobile = true
 }
-
-//let isIOS = /iPad|iPhone|iPod/.test(navigator.platform) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 
 const MainScene = () =>
 {
@@ -132,7 +130,7 @@ function loadResources()
     const exrLoader = new EXRLoader(loadingManager)
     const dracoLoader = new DRACOLoader(loadingManager)
     const gltfLoader = new GLTFLoader(loadingManager)
-    const textureLoader = new TextureLoader(loadingManager)
+    //const textureLoader = new TextureLoader(loadingManager)
 
     dracoLoader.setDecoderPath(`${THREE_PATH}/examples/js/libs/draco/gltf/`)
 
@@ -577,11 +575,6 @@ function setupEvents()
     leftJoystick.on('end', (event) =>
     {
         angle = null
-
-/*         if (isIOS)
-        {
-            event.target.manager.unbindDocument(true)
-        } */
     })
 
     rightJoystick.on('move', (event, data) =>
@@ -597,11 +590,6 @@ function setupEvents()
     {
         inputRotationX = 0
         inputRotationY = 0
-
-/*         if (isIOS)
-        {
-            event.target.manager.unbindDocument(true)
-        } */
     })
 
     blocker.addEventListener('click', () =>
