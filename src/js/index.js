@@ -21,7 +21,7 @@ let intersected
 let canvas, blocker, audioElement, loaderPercent, loaderBar, interactText, menuButton
 let levelCollision, doorCollision, cageCollision, laptopCollision, foxCollision, leverCollision, button1Collision, button2Collision, button3Collision
 let scene, camera, renderer, controls, mixer, mixer1, mixer2, listener, pmremGenerator, musicLocator, positionalAudio, audioContext, biquadFilter, cameraRaycaster, playerRaycaster
-let physics, clock, player, door, hiddenDoor, doorOpened = false, discoBall, doorHoverText = 'OPEN DOOR', walletConnected = true
+let physics, clock, player, door, hiddenDoor, doorOpened = false, discoBall, doorHoverText = 'OPEN DOOR', walletConnected = false
 let torchBillboards = [], torchMaterial, torchAnimator, fireplaceMaterial, fireplaceAnimator, emissiveMaterial, emissiveFloorMaterial, lightMaterial
 let zuckerberg, buterin, baby1, baby2, baby3, baby4
 let zuckerbergLocator, buterinLocator, baby1Locator, baby2Locator, baby3Locator, baby4Locator
@@ -52,6 +52,8 @@ if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elain
 {
     isMobile = true
 }
+
+//let isIOS = /iPad|iPhone|iPod/.test(navigator.platform) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 
 const MainScene = () =>
 {
@@ -136,15 +138,15 @@ function loadResources()
 
     gltfLoader.setDRACOLoader(dracoLoader)
 
-    textureLoader.load('./images/TEX_lightmap_outside.webp', (texture) =>
+    exrLoader.load('./images/TEX_lightmap_outside.exr', (texture) =>
     {
-        texture.flipY = false
+        texture.flipY = true
         lightmaps[0] = texture
     })
 
-    textureLoader.load('./images/TEX_lightmap_inside.webp', (texture) =>
+    exrLoader.load('./images/TEX_lightmap_inside.exr', (texture) =>
     {
-        texture.flipY = false
+        texture.flipY = true
         lightmaps[1] = texture
     })
 
@@ -294,7 +296,7 @@ function loadResources()
     loadingManager.onProgress = (url, itemsLoaded, itemsTotal) =>
     {
         let progress = itemsLoaded / itemsTotal * 100
-        loaderPercent.innerHTML = Math.floor(progress) + '%'
+        loaderPercent.innerHTML = Math.floor(progress) + ''
         loaderBar.style.width = progress + '%'
     }
 
@@ -572,9 +574,14 @@ function setupEvents()
         force = data.force < 1 ? data.force : 1
     })
 
-    leftJoystick.on('end', () =>
+    leftJoystick.on('end', (event) =>
     {
         angle = null
+
+/*         if (isIOS)
+        {
+            event.target.manager.unbindDocument(true)
+        } */
     })
 
     rightJoystick.on('move', (event, data) =>
@@ -586,10 +593,15 @@ function setupEvents()
         inputRotationY = Math.sin(angle) * force * 0.03
     })
 
-    rightJoystick.on('end', () =>
+    rightJoystick.on('end', (event) =>
     {
         inputRotationX = 0
         inputRotationY = 0
+
+/*         if (isIOS)
+        {
+            event.target.manager.unbindDocument(true)
+        } */
     })
 
     blocker.addEventListener('click', () =>
@@ -870,7 +882,7 @@ function interact()
 
     if (intersected && intersected.name === 'COLLISION_lever')
     {
-        if(!walletConnected) return
+        if (!walletConnected) return
 
         scene.animations.forEach((animation) =>
         {
@@ -964,7 +976,9 @@ function changeMaterialOffset()
 
 function connectWallet()
 {
+    // Change light color to green
     lightMaterial.emissiveMap.offset.x += 0.5
+    // Enable lever
     walletConnected = true
 }
 
